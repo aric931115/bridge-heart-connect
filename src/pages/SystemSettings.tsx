@@ -1,9 +1,11 @@
 import { Type, Contrast, Volume2 } from 'lucide-react';
 import PageHeader from '@/components/PageHeader';
 import { useAppContext } from '@/contexts/AppContext';
+import { useVoiceAssistant } from '@/hooks/useVoiceAssistant';
 
 const SystemSettings = () => {
   const { settings, updateSettings } = useAppContext();
+  useVoiceAssistant(`系統設定頁面。目前文字大小為${settings.textSize === 'small' ? '小' : settings.textSize === 'medium' ? '中' : '大'}，高對比模式${settings.highContrast ? '已開啟' : '已關閉'}，語音助手已開啟。`);
 
   const sizes: Array<{ value: 'small' | 'medium' | 'large'; label: string }> = [
     { value: 'small', label: '小' },

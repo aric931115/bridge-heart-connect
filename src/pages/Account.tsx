@@ -2,12 +2,21 @@ import { useState } from 'react';
 import { LogIn, UserPlus, KeyRound, Mail, Eye, EyeOff, ArrowRight } from 'lucide-react';
 import PageHeader from '@/components/PageHeader';
 import { toast } from 'sonner';
+import { useVoiceAssistant } from '@/hooks/useVoiceAssistant';
 
 type View = 'main' | 'login' | 'signup' | 'forgot' | 'changePw';
 
 const Account = () => {
   const [view, setView] = useState<View>('main');
   const [showPw, setShowPw] = useState(false);
+
+  useVoiceAssistant(
+    view === 'main' ? '帳戶管理頁面。可以登入、註冊、更改密碼或找回密碼。'
+    : view === 'login' ? '登入頁面。請輸入學校信箱和密碼。'
+    : view === 'signup' ? '註冊頁面。請輸入學校信箱和密碼。'
+    : view === 'forgot' ? '找回密碼頁面。'
+    : '更改密碼頁面。請輸入目前密碼和新密碼。'
+  );
 
   if (view === 'login') {
     return (

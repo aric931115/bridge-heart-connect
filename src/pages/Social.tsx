@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Search, QrCode, UserPlus, Trophy, Star, Music, Palette, BookOpen } from 'lucide-react';
 import PageHeader from '@/components/PageHeader';
 import { toast } from 'sonner';
+import { useVoiceAssistant } from '@/hooks/useVoiceAssistant';
 
 const friends = [
   { id: 1, name: '小明', avatar: '🧑', status: '在線', interests: ['music', 'art'] },
@@ -23,6 +24,13 @@ const Social = () => {
   const [view, setView] = useState<View>('list');
   const [selectedFriend, setSelectedFriend] = useState(friends[0]);
   const [searchId, setSearchId] = useState('');
+
+  useVoiceAssistant(
+    view === 'list' ? `社交頁面。你有${friends.filter(f => f.status === '在線').length}位好友在線。`
+    : view === 'add' ? '加入好友頁面。可以輸入好友 ID 或掃描 QR Code。'
+    : view === 'profile' ? `好友資料：${selectedFriend.name}，狀態${selectedFriend.status}。`
+    : '成就頁面。'
+  );
 
   if (view === 'add') {
     return (

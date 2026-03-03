@@ -1,6 +1,7 @@
 import { Volume2, MapPin, Clock } from 'lucide-react';
 import PageHeader from '@/components/PageHeader';
 import { toast } from 'sonner';
+import { useVoiceAssistant } from '@/hooks/useVoiceAssistant';
 
 const events = [
   { id: 1, title: '校園愛心園遊會', date: '3月15日（六）', location: '活動中心廣場', desc: '一起來參加愛心園遊會，有各種攤位和表演！' },
@@ -10,6 +11,8 @@ const events = [
 ];
 
 const Activities = () => {
+  useVoiceAssistant(`校園活動頁面。最新公告：園遊會攤位報名延長至3月10日。共有${events.length}個活動：${events.map(e => e.title).join('、')}。`);
+
   const speak = (text: string) => {
     if ('speechSynthesis' in window) {
       const u = new SpeechSynthesisUtterance(text);

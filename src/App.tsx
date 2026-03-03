@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AppProvider } from "@/contexts/AppContext";
 import BottomNav from "@/components/BottomNav";
+import VoiceIndicator from "@/components/VoiceIndicator";
 import Activities from "@/pages/Activities";
 import Games from "@/pages/Games";
 import Social from "@/pages/Social";
@@ -22,6 +23,7 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
           <div className="max-w-lg mx-auto min-h-screen bg-background relative">
+            <VoiceIndicator />
             <Routes>
               <Route path="/" element={<Navigate to="/activities" replace />} />
               <Route path="/activities" element={<Activities />} />
