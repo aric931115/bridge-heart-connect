@@ -2,12 +2,18 @@ import { useState } from 'react';
 import { QrCode, Plus, Hand, Image, ArrowLeft, Keyboard } from 'lucide-react';
 import PageHeader from '@/components/PageHeader';
 import { toast } from 'sonner';
+import { useVoiceAssistant } from '@/hooks/useVoiceAssistant';
 
 type View = 'main' | 'join' | 'create';
 
 const Games = () => {
   const [view, setView] = useState<View>('main');
   const [roomCode, setRoomCode] = useState('');
+
+  const voiceText = view === 'main' ? '遊玩頁面。你可以選擇加入房間或創建房間。'
+    : view === 'join' ? '加入房間頁面。可以掃描 QR Code 或輸入房間代碼。'
+    : '創建房間頁面。可以選擇簡單手勢任務或圖像配對遊戲。';
+  useVoiceAssistant(voiceText);
 
   if (view === 'join') {
     return (
