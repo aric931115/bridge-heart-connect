@@ -114,12 +114,30 @@
   }
 
   .text-size-small {
-    font-size: 14px;
+    font-size: 14px !important;
+    line-height: 1.5;
+  }
+  .text-size-small h1, .text-size-small h2, .text-size-small .text-lg {
+    font-size: 16px !important;
   }
   .text-size-medium {
-    font-size: 18px;
+    font-size: 18px !important;
+    line-height: 1.6;
+  }
+  .text-size-medium h1, .text-size-medium h2, .text-size-medium .text-lg {
+    font-size: 20px !important;
   }
   .text-size-large {
-    font-size: 22px;
+    font-size: 24px !important;
+    line-height: 1.7;
+  }
+  .text-size-large h1, .text-size-large h2, .text-size-large .text-lg {
+    font-size: 28px !important;
+  }
+  .text-size-large .text-sm {
+    font-size: 20px !important;
+  }
+  .text-size-large .text-muted-foreground {
+    font-size: 20px !important;
   }
 }
