@@ -30,6 +30,9 @@ const App = () => (
             <Routes>
               <Route path="/" element={<Navigate to="/activities" replace />} />
               <Route path="/activities" element={<Activities />} />
+              <Route path="/activities/create" element={<CreateActivity />} />
+              <Route path="/activities/:id" element={<ActivityDetail />} />
+              <Route path="/activities/:id/room" element={<TaskRoom />} />
               <Route path="/games" element={<Games />} />
               <Route path="/social" element={<Social />} />
               <Route path="/account" element={<Account />} />
