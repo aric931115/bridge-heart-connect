@@ -1,4 +1,4 @@
-import { Volume2, MapPin, Clock, Plus, Users } from 'lucide-react';
+import { Volume2, MapPin, Clock, Users, Gamepad2 } from 'lucide-react';
 import PageHeader from '@/components/PageHeader';
 import { toast } from 'sonner';
 import { useVoiceAssistant } from '@/hooks/useVoiceAssistant';
@@ -30,14 +30,6 @@ const Activities = () => {
           📢 最新公告：園遊會攤位報名延長至3月10日！
         </div>
 
-        <Link
-          to="/activities/create"
-          className="flex items-center justify-center gap-2 w-full py-4 rounded-2xl border-2 border-dashed border-primary/40 text-primary font-bold text-lg active:scale-95 transition-transform hover:bg-primary/5"
-        >
-          <Plus size={24} />
-          建立新活動
-        </Link>
-
         {activities.map(e => (
           <Link
             key={e.id}
@@ -45,7 +37,14 @@ const Activities = () => {
             className="card-accessible space-y-3 block"
           >
             <div className="flex items-start justify-between">
-              <h2 className="text-lg font-bold text-foreground">{e.title}</h2>
+              <div className="flex-1">
+                <h2 className="text-lg font-bold text-foreground">{e.title}</h2>
+                {e.quiz.length > 0 && (
+                  <span className="inline-flex items-center gap-1 text-xs font-bold text-primary bg-primary/10 rounded-full px-2 py-0.5 mt-1">
+                    <Gamepad2 size={12} /> 含問答挑戰
+                  </span>
+                )}
+              </div>
               <button
                 onClick={(ev) => {
                   ev.preventDefault();
