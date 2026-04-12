@@ -1,52 +1,77 @@
-# 歡迎來到您的 Lovable 專案
+# Bridge Heart Connect
 
-## 🚀 快速啟動（推薦）
+一個專為橋牌愛好者設計的社交與活動管理平台，讓您輕鬆連接橋牌社群、參與活動，並享受橋牌的樂趣。
 
-**最簡單的方式**：雙擊 `start-dev.bat` 或 `start-dev.ps1` 檔案即可啟動應用程式！
+## ✨ 主要功能
 
-這兩個檔案會自動：
-- 檢查 Node.js 和 npm 是否安裝
-- 安裝必要的依賴套件
-- 啟動開發伺服器
-- 在瀏覽器中開啟 http://localhost:8080/ (或 8081 如果被佔用)
+- **🏠 首頁**：快速瀏覽最新活動和社群動態
+- **👤 個人帳戶**：管理個人資料和橋牌成績
+- **🎯 活動管理**：瀏覽、加入和創建橋牌活動
+- **🎮 遊戲中心**：線上橋牌遊戲和練習模式
+- **🤝 社交功能**：連接其他橋牌玩家，分享經驗
+- **⚙️ 系統設定**：自訂應用偏好和通知
+- **🗣️ 語音助手**：智慧語音互動，協助橋牌學習
 
-**詳細說明**：請參考 `QUICKSTART.md` 檔案
+## 🚀 快速啟動
 
-## 專案資訊
+### Windows 使用者
+雙擊 `start-dev.bat` 或 `start-dev.ps1` 檔案即可啟動！
 
-**網址**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+### Mac/Linux 使用者
+```bash
+# 安裝依賴
+npm install
 
-## 如何編輯此程式碼？
-
-有多種方式可以編輯您的應用程式。
-
-**使用 Lovable**
-
-只需前往 [Lovable 專案](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) 並開始輸入提示。
-
-透過 Lovable 所做的變更將自動提交到此儲存庫。
-
-**使用您偏好的 IDE**
-
-如果您想在本機使用自己的 IDE 進行開發，可以複製此儲存庫並推送變更。推送的變更也會同步反映在 Lovable 中。
-
-唯一的要求是安裝 Node.js 和 npm — [使用 nvm 安裝](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-請按照以下步驟操作：
-
-```sh
-# 步驟 1：使用專案的 Git 網址複製儲存庫。
-git clone <YOUR_GIT_URL>
-
-# 步驟 2：進入專案目錄。
-cd <YOUR_PROJECT_NAME>
-
-# 步驟 3：安裝必要的依賴套件。
-npm i
-
-# 步驟 4：啟動具有自動重新載入和即時預覽功能的開發伺服器。
+# 啟動開發伺服器
 npm run dev
 ```
+
+應用將在 http://localhost:8080/ 啟動
+
+## 🛠️ 技術棧
+
+- **前端**：React + TypeScript + Vite
+- **UI 框架**：Tailwind CSS + shadcn/ui
+- **狀態管理**：React Context
+- **路由**：React Router
+- **建構工具**：Vite
+- **測試**：Vitest
+
+## 📁 專案結構
+
+```
+src/
+├── components/          # 可重用元件
+│   ├── ui/             # UI 元件庫
+│   └── ...
+├── pages/              # 頁面元件
+├── contexts/           # React Context
+├── hooks/              # 自訂 Hooks
+├── lib/                # 工具函數
+└── test/               # 測試檔案
+```
+
+## 🤝 貢獻
+
+歡迎橋牌社群的貢獻！請遵循以下步驟：
+
+1. Fork 此專案
+2. 建立功能分支 (`git checkout -b feature/AmazingFeature`)
+3. 提交變更 (`git commit -m 'Add some AmazingFeature'`)
+4. 推送分支 (`git push origin feature/AmazingFeature`)
+5. 開啟 Pull Request
+
+## 📄 授權
+
+此專案採用 MIT 授權 - 詳見 [LICENSE](LICENSE) 檔案
+
+## 📞 聯絡我們
+
+有任何問題或建議？歡迎透過 GitHub Issues 聯絡我們！
+
+---
+
+**讓橋牌連接每顆心 ❤️**
 
 **直接在 GitHub 上編輯檔案**
 
