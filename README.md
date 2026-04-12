@@ -1,5 +1,17 @@
 # 歡迎來到您的 Lovable 專案
 
+## 🚀 快速啟動（推薦）
+
+**最簡單的方式**：雙擊 `start-dev.bat` 或 `start-dev.ps1` 檔案即可啟動應用程式！
+
+這兩個檔案會自動：
+- 檢查 Node.js 和 npm 是否安裝
+- 安裝必要的依賴套件
+- 啟動開發伺服器
+- 在瀏覽器中開啟 http://localhost:8080/ (或 8081 如果被佔用)
+
+**詳細說明**：請參考 `QUICKSTART.md` 檔案
+
 ## 專案資訊
 
 **網址**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
