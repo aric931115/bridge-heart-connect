@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { LogIn, UserPlus, KeyRound, Mail, Eye, EyeOff, ArrowRight, Trophy, Coins, History, UserCog, Users as UsersIcon } from 'lucide-react';
+import { LogIn, UserPlus, KeyRound, Mail, Eye, EyeOff, ArrowRight, Trophy, Coins, History } from 'lucide-react';
 import PageHeader from '@/components/PageHeader';
 import { toast } from 'sonner';
 import { useVoiceAssistant } from '@/hooks/useVoiceAssistant';
@@ -10,7 +10,7 @@ type View = 'main' | 'login' | 'signup' | 'forgot' | 'changePw' | 'career';
 const Account = () => {
   const [view, setView] = useState<View>('main');
   const [showPw, setShowPw] = useState(false);
-  const { user, setRole } = useAppContext();
+  const { user } = useAppContext();
 
   useVoiceAssistant(
     view === 'main' ? `帳戶管理。目前身份：${user.role === 'organizer' ? '活動發起者' : '參與者'}，累積${user.points}積分。`
@@ -159,31 +159,6 @@ const Account = () => {
             <p className="text-lg font-bold">{user.name}</p>
             <p className="text-sm text-muted-foreground">ID：{user.id}</p>
             <p className="text-sm font-bold text-primary">💎 {user.points} 積分</p>
-          </div>
-        </div>
-
-        {/* 角色切換 */}
-        <div className="space-y-2">
-          <label className="text-sm font-bold flex items-center gap-2"><UserCog size={16} /> 目前身份</label>
-          <div className="grid grid-cols-2 gap-2">
-            <button
-              onClick={() => { setRole('participant'); toast.success('已切換為參與者'); }}
-              className={`rounded-xl border-2 p-3 flex flex-col items-center gap-1 transition-all ${
-                user.role === 'participant' ? 'border-primary bg-primary/10 text-primary' : 'border-border'
-              }`}
-            >
-              <UsersIcon size={24} />
-              <span className="text-sm font-bold">參與者</span>
-            </button>
-            <button
-              onClick={() => { setRole('organizer'); toast.success('已切換為活動發起者'); }}
-              className={`rounded-xl border-2 p-3 flex flex-col items-center gap-1 transition-all ${
-                user.role === 'organizer' ? 'border-primary bg-primary/10 text-primary' : 'border-border'
-              }`}
-            >
-              <UserCog size={24} />
-              <span className="text-sm font-bold">活動發起者</span>
-            </button>
           </div>
         </div>
 
