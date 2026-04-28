@@ -1,22 +1,71 @@
 import { useState } from 'react';
-import { LogIn, UserPlus, KeyRound, Mail, Eye, EyeOff, ArrowRight } from 'lucide-react';
+import { LogIn, UserPlus, KeyRound, Mail, Eye, EyeOff, ArrowRight, Trophy, Coins, History, UserCog, Users as UsersIcon } from 'lucide-react';
 import PageHeader from '@/components/PageHeader';
 import { toast } from 'sonner';
 import { useVoiceAssistant } from '@/hooks/useVoiceAssistant';
+import { useAppContext } from '@/contexts/AppContext';
 
-type View = 'main' | 'login' | 'signup' | 'forgot' | 'changePw';
+type View = 'main' | 'login' | 'signup' | 'forgot' | 'changePw' | 'career';
 
 const Account = () => {
   const [view, setView] = useState<View>('main');
   const [showPw, setShowPw] = useState(false);
+  const { user, setRole } = useAppContext();
 
   useVoiceAssistant(
-    view === 'main' ? '帳戶管理頁面。可以登入、註冊、更改密碼或找回密碼。'
+    view === 'main' ? `帳戶管理。目前身份：${user.role === 'organizer' ? '活動發起者' : '參與者'}，累積${user.points}積分。`
     : view === 'login' ? '登入頁面。請輸入學校信箱和密碼。'
     : view === 'signup' ? '註冊頁面。請輸入學校信箱和密碼。'
     : view === 'forgot' ? '找回密碼頁面。'
-    : '更改密碼頁面。請輸入目前密碼和新密碼。'
+    : view === 'career' ? '個人生涯頁面，查看歷史參與與成就。'
+    : '更改密碼頁面。'
   );
+
+  if (view === 'career') {
+    return (
+      <div className="pb-24">
+        <PageHeader title="我的生涯" showBack />
+        <div className="p-4 space-y-5">
+          <div className="card-accessible bg-primary text-primary-foreground flex items-center gap-4">
+            <div className="w-16 h-16 rounded-full bg-primary-foreground/20 flex items-center justify-center">
+              <Coins size={32} />
+            </div>
+            <div>
+              <p className="text-sm opacity-80">累積積分</p>
+              <p className="text-3xl font-bold">{user.points}</p>
+            </div>
+          </div>
+
+          <div className="space-y-3">
+            <h2 className="text-lg font-bold flex items-center gap-2"><Trophy size={20} /> 歷史成就</h2>
+            {user.achievements.map(a => (
+              <div key={a.id} className="card-accessible flex items-center gap-3">
+                <div className="w-12 h-12 rounded-xl bg-secondary flex items-center justify-center text-2xl">🏆</div>
+                <div className="flex-1">
+                  <p className="font-bold">{a.title}</p>
+                  <p className="text-sm text-muted-foreground">{a.desc}</p>
+                </div>
+                <span className="text-xs text-muted-foreground">{a.unlockedAt}</span>
+              </div>
+            ))}
+          </div>
+
+          <div className="space-y-3">
+            <h2 className="text-lg font-bold flex items-center gap-2"><History size={20} /> 歷史參與紀錄</h2>
+            {user.history.map(h => (
+              <div key={h.activityId} className="card-accessible flex items-center justify-between">
+                <div>
+                  <p className="font-bold">{h.title}</p>
+                  <p className="text-sm text-muted-foreground">完成於 {h.completedAt}</p>
+                </div>
+                <span className="text-primary font-bold">+{h.pointsEarned}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (view === 'login') {
     return (
@@ -63,7 +112,6 @@ const Account = () => {
           <button onClick={() => toast.success('已發送驗證信至您的信箱！')} className="accessible-btn w-full bg-primary text-primary-foreground flex items-center justify-center gap-2">
             <Mail size={24} /> 發送驗證信
           </button>
-          <p className="text-muted-foreground text-center">請使用學校信箱註冊，並完成信箱驗證。</p>
         </div>
       </div>
     );
@@ -89,17 +137,9 @@ const Account = () => {
       <div className="pb-24">
         <PageHeader title="更改密碼" showBack />
         <div className="p-6 space-y-5">
-          <div className="space-y-2">
-            <label className="font-bold">目前密碼</label>
-            <input type="password" placeholder="輸入目前密碼" className="w-full min-h-[60px] rounded-2xl border-2 border-input bg-background px-4 text-lg focus:outline-none focus:ring-4 focus:ring-ring" />
-          </div>
-          <div className="flex items-center justify-center text-muted-foreground">
-            <ArrowRight size={28} />
-          </div>
-          <div className="space-y-2">
-            <label className="font-bold">新密碼</label>
-            <input type="password" placeholder="輸入新密碼" className="w-full min-h-[60px] rounded-2xl border-2 border-input bg-background px-4 text-lg focus:outline-none focus:ring-4 focus:ring-ring" />
-          </div>
+          <input type="password" placeholder="目前密碼" className="w-full min-h-[60px] rounded-2xl border-2 border-input bg-background px-4 text-lg focus:outline-none focus:ring-4 focus:ring-ring" />
+          <div className="flex items-center justify-center text-muted-foreground"><ArrowRight size={28} /></div>
+          <input type="password" placeholder="新密碼" className="w-full min-h-[60px] rounded-2xl border-2 border-input bg-background px-4 text-lg focus:outline-none focus:ring-4 focus:ring-ring" />
           <button onClick={() => toast.success('密碼已更新！')} className="accessible-btn w-full bg-primary text-primary-foreground">
             確認更改
           </button>
@@ -112,11 +152,49 @@ const Account = () => {
     <div className="pb-24">
       <PageHeader title="帳戶管理" />
       <div className="p-6 space-y-5">
-        <button onClick={() => setView('login')} className="accessible-btn w-full bg-primary text-primary-foreground flex items-center justify-center gap-3 py-7 text-xl">
-          <LogIn size={32} /> 登入
+        {/* 個人資料卡 */}
+        <div className="card-accessible flex items-center gap-4">
+          <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center text-3xl">👤</div>
+          <div className="flex-1">
+            <p className="text-lg font-bold">{user.name}</p>
+            <p className="text-sm text-muted-foreground">ID：{user.id}</p>
+            <p className="text-sm font-bold text-primary">💎 {user.points} 積分</p>
+          </div>
+        </div>
+
+        {/* 角色切換 */}
+        <div className="space-y-2">
+          <label className="text-sm font-bold flex items-center gap-2"><UserCog size={16} /> 目前身份</label>
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              onClick={() => { setRole('participant'); toast.success('已切換為參與者'); }}
+              className={`rounded-xl border-2 p-3 flex flex-col items-center gap-1 transition-all ${
+                user.role === 'participant' ? 'border-primary bg-primary/10 text-primary' : 'border-border'
+              }`}
+            >
+              <UsersIcon size={24} />
+              <span className="text-sm font-bold">參與者</span>
+            </button>
+            <button
+              onClick={() => { setRole('organizer'); toast.success('已切換為活動發起者'); }}
+              className={`rounded-xl border-2 p-3 flex flex-col items-center gap-1 transition-all ${
+                user.role === 'organizer' ? 'border-primary bg-primary/10 text-primary' : 'border-border'
+              }`}
+            >
+              <UserCog size={24} />
+              <span className="text-sm font-bold">活動發起者</span>
+            </button>
+          </div>
+        </div>
+
+        <button onClick={() => setView('career')} className="accessible-btn w-full bg-secondary text-secondary-foreground flex items-center justify-center gap-3">
+          <Trophy size={24} /> 我的生涯
         </button>
-        <button onClick={() => setView('signup')} className="accessible-btn w-full bg-secondary text-secondary-foreground flex items-center justify-center gap-3 py-7 text-xl">
-          <UserPlus size={32} /> 註冊
+        <button onClick={() => setView('login')} className="accessible-btn w-full bg-primary text-primary-foreground flex items-center justify-center gap-3">
+          <LogIn size={24} /> 登入
+        </button>
+        <button onClick={() => setView('signup')} className="accessible-btn w-full border-2 border-border text-foreground flex items-center justify-center gap-3">
+          <UserPlus size={24} /> 註冊
         </button>
         <button onClick={() => setView('changePw')} className="accessible-btn w-full border-2 border-border text-foreground flex items-center justify-center gap-3">
           <KeyRound size={24} /> 更改密碼

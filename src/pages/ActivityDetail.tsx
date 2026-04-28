@@ -1,14 +1,16 @@
-import { useParams } from 'react-router-dom';
-import { MapPin, Clock, Users, Volume2, CheckCircle2, Circle, LogIn, Gamepad2, Copy } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
+import { MapPin, Clock, Users, Volume2, CheckCircle2, Circle, LogIn, Gamepad2, Copy, Settings2 } from 'lucide-react';
 import PageHeader from '@/components/PageHeader';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { useActivities } from '@/hooks/useActivities';
+import { useAppContext } from '@/contexts/AppContext';
 
 const ActivityDetail = () => {
   const { id } = useParams();
+  const navigate = useNavigate();
   const { activities, joinActivity, toggleTask } = useActivities();
+  const { user } = useAppContext();
   const activity = activities.find(a => a.id === Number(id));
 
   if (!activity) {
@@ -83,6 +85,13 @@ const ActivityDetail = () => {
             <p className="text-foreground leading-relaxed">{activity.content}</p>
           </div>
         </div>
+
+        {/* Organizer manage entry */}
+        {user.role === 'organizer' && (
+          <Button onClick={() => navigate(`/activities/${activity.id}/manage`)} variant="secondary" className="w-full h-14 text-lg font-bold rounded-2xl gap-2">
+            <Settings2 size={22} /> 管理此活動
+          </Button>
+        )}
 
         {/* Join button */}
         {!activity.joined ? (
