@@ -162,31 +162,6 @@ const Account = () => {
           </div>
         </div>
 
-        {/* 角色切換 */}
-        <div className="space-y-2">
-          <label className="text-sm font-bold flex items-center gap-2"><UserCog size={16} /> 目前身份</label>
-          <div className="grid grid-cols-2 gap-2">
-            <button
-              onClick={() => { setRole('participant'); toast.success('已切換為參與者'); }}
-              className={`rounded-xl border-2 p-3 flex flex-col items-center gap-1 transition-all ${
-                user.role === 'participant' ? 'border-primary bg-primary/10 text-primary' : 'border-border'
-              }`}
-            >
-              <UsersIcon size={24} />
-              <span className="text-sm font-bold">參與者</span>
-            </button>
-            <button
-              onClick={() => { setRole('organizer'); toast.success('已切換為活動發起者'); }}
-              className={`rounded-xl border-2 p-3 flex flex-col items-center gap-1 transition-all ${
-                user.role === 'organizer' ? 'border-primary bg-primary/10 text-primary' : 'border-border'
-              }`}
-            >
-              <UserCog size={24} />
-              <span className="text-sm font-bold">活動發起者</span>
-            </button>
-          </div>
-        </div>
-
         <button onClick={() => setView('career')} className="accessible-btn w-full bg-secondary text-secondary-foreground flex items-center justify-center gap-3">
           <Trophy size={24} /> 我的生涯
         </button>
