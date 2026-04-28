@@ -10,7 +10,7 @@ type View = 'main' | 'login' | 'signup' | 'forgot' | 'changePw' | 'career';
 const Account = () => {
   const [view, setView] = useState<View>('main');
   const [showPw, setShowPw] = useState(false);
-  const { user, setRole } = useAppContext();
+  const { user } = useAppContext();
 
   useVoiceAssistant(
     view === 'main' ? `帳戶管理。目前身份：${user.role === 'organizer' ? '活動發起者' : '參與者'}，累積${user.points}積分。`
