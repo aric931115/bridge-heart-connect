@@ -10,6 +10,7 @@ import Activities from "@/pages/Activities";
 import ActivityDetail from "@/pages/ActivityDetail";
 import TaskRoom from "@/pages/TaskRoom";
 import CreateActivity from "@/pages/CreateActivity";
+import ManageActivity from "@/pages/ManageActivity";
 import Games from "@/pages/Games";
 import Social from "@/pages/Social";
 import Account from "@/pages/Account";
@@ -33,6 +34,7 @@ const App = () => (
               <Route path="/activities/create" element={<CreateActivity />} />
               <Route path="/activities/:id" element={<ActivityDetail />} />
               <Route path="/activities/:id/room" element={<TaskRoom />} />
+              <Route path="/activities/:id/manage" element={<ManageActivity />} />
               <Route path="/games" element={<Games />} />
               <Route path="/social" element={<Social />} />
               <Route path="/account" element={<Account />} />

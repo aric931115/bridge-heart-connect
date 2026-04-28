@@ -1,14 +1,27 @@
-import { Volume2, MapPin, Clock, Users, Gamepad2 } from 'lucide-react';
+import { Volume2, MapPin, Clock, Users, Gamepad2, School, Lock, Plus, Settings2 } from 'lucide-react';
 import PageHeader from '@/components/PageHeader';
 import { toast } from 'sonner';
 import { useVoiceAssistant } from '@/hooks/useVoiceAssistant';
-import { Link } from 'react-router-dom';
-import { useActivities } from '@/hooks/useActivities';
+import { Link, useNavigate } from 'react-router-dom';
+import { useActivities, ActivityCategory } from '@/hooks/useActivities';
+import { useAppContext } from '@/contexts/AppContext';
+import { useState } from 'react';
+
+const CATEGORY_META: Record<ActivityCategory, { label: string; icon: typeof School; color: string }> = {
+  campus: { label: '校園', icon: School, color: 'text-primary bg-primary/10' },
+  limited: { label: '限時', icon: Clock, color: 'text-warning bg-warning/10' },
+  private: { label: '私人', icon: Lock, color: 'text-muted-foreground bg-muted' },
+};
 
 const Activities = () => {
   const { activities } = useActivities();
+  const { user } = useAppContext();
+  const navigate = useNavigate();
+  const [filter, setFilter] = useState<'all' | ActivityCategory>('all');
 
-  useVoiceAssistant(`校園活動頁面。共有${activities.length}個活動：${activities.map(e => e.title).join('、')}。`);
+  const filtered = filter === 'all' ? activities : activities.filter(a => a.category === filter);
+
+  useVoiceAssistant(`校園活動頁面。共有${activities.length}個活動。目前身份：${user.role === 'organizer' ? '活動發起者' : '參與者'}。`);
 
   const speak = (text: string) => {
     if ('speechSynthesis' in window) {
@@ -17,8 +30,6 @@ const Activities = () => {
       u.rate = 0.9;
       speechSynthesis.speak(u);
       toast.success('正在朗讀中...');
-    } else {
-      toast.error('您的瀏覽器不支援語音功能');
     }
   };
 
@@ -30,40 +41,81 @@ const Activities = () => {
           📢 最新公告：園遊會攤位報名延長至3月10日！
         </div>
 
-        {activities.map(e => (
-          <Link
-            key={e.id}
-            to={`/activities/${e.id}`}
-            className="card-accessible space-y-3 block"
+        {/* 角色提示與發起者快捷 */}
+        {user.role === 'organizer' && (
+          <button
+            onClick={() => navigate('/activities/create')}
+            className="accessible-btn w-full bg-primary text-primary-foreground flex items-center justify-center gap-2"
           >
-            <div className="flex items-start justify-between">
-              <div className="flex-1">
-                <h2 className="text-lg font-bold text-foreground">{e.title}</h2>
-                {e.quiz.length > 0 && (
-                  <span className="inline-flex items-center gap-1 text-xs font-bold text-primary bg-primary/10 rounded-full px-2 py-0.5 mt-1">
-                    <Gamepad2 size={12} /> 含問答挑戰
-                  </span>
-                )}
+            <Plus size={24} /> 建立新活動
+          </button>
+        )}
+
+        {/* 類別篩選 */}
+        <div className="flex gap-2 overflow-x-auto pb-1">
+          {(['all', 'campus', 'limited', 'private'] as const).map(k => (
+            <button
+              key={k}
+              onClick={() => setFilter(k)}
+              className={`px-4 py-2 rounded-full font-bold text-sm whitespace-nowrap border-2 transition-colors ${
+                filter === k ? 'bg-primary text-primary-foreground border-primary' : 'border-border text-muted-foreground'
+              }`}
+            >
+              {k === 'all' ? '全部' : CATEGORY_META[k].label}
+            </button>
+          ))}
+        </div>
+
+        {filtered.map(e => {
+          const meta = CATEGORY_META[e.category];
+          const Icon = meta.icon;
+          return (
+            <Link key={e.id} to={`/activities/${e.id}`} className="card-accessible space-y-3 block">
+              <div className="flex items-start justify-between gap-2">
+                <div className="flex-1">
+                  <div className="flex flex-wrap items-center gap-1.5 mb-1">
+                    <span className={`inline-flex items-center gap-1 text-xs font-bold rounded-full px-2 py-0.5 ${meta.color}`}>
+                      <Icon size={12} /> {meta.label}
+                    </span>
+                    {e.quiz.length > 0 && (
+                      <span className="inline-flex items-center gap-1 text-xs font-bold text-primary bg-primary/10 rounded-full px-2 py-0.5">
+                        <Gamepad2 size={12} /> 含問答
+                      </span>
+                    )}
+                    {e.status === 'ended' && (
+                      <span className="text-xs font-bold bg-muted text-muted-foreground rounded-full px-2 py-0.5">已結束</span>
+                    )}
+                  </div>
+                  <h2 className="text-lg font-bold text-foreground">{e.title}</h2>
+                </div>
+                <div className="flex gap-1 flex-shrink-0">
+                  {user.role === 'organizer' && (
+                    <button
+                      onClick={(ev) => { ev.preventDefault(); navigate(`/activities/${e.id}/manage`); }}
+                      className="w-12 h-12 rounded-xl bg-primary text-primary-foreground flex items-center justify-center active:scale-90"
+                      aria-label="管理活動"
+                    >
+                      <Settings2 size={22} />
+                    </button>
+                  )}
+                  <button
+                    onClick={(ev) => { ev.preventDefault(); speak(`${e.title}。${e.desc}。時間：${e.date}。地點：${e.location}`); }}
+                    className="w-12 h-12 rounded-xl bg-secondary text-secondary-foreground flex items-center justify-center active:scale-90"
+                    aria-label={`朗讀 ${e.title}`}
+                  >
+                    <Volume2 size={22} />
+                  </button>
+                </div>
               </div>
-              <button
-                onClick={(ev) => {
-                  ev.preventDefault();
-                  speak(`${e.title}。${e.desc}。時間：${e.date}。地點：${e.location}`);
-                }}
-                className="w-12 h-12 rounded-xl bg-secondary text-secondary-foreground flex items-center justify-center active:scale-90 transition-transform flex-shrink-0"
-                aria-label={`朗讀 ${e.title}`}
-              >
-                <Volume2 size={24} />
-              </button>
-            </div>
-            <p className="text-muted-foreground">{e.desc}</p>
-            <div className="flex flex-wrap gap-3 text-sm text-muted-foreground">
-              <span className="flex items-center gap-1"><Clock size={16} />{e.date}</span>
-              <span className="flex items-center gap-1"><MapPin size={16} />{e.location}</span>
-              <span className="flex items-center gap-1"><Users size={16} />{e.participants} 人已加入</span>
-            </div>
-          </Link>
-        ))}
+              <p className="text-muted-foreground">{e.desc}</p>
+              <div className="flex flex-wrap gap-3 text-sm text-muted-foreground">
+                <span className="flex items-center gap-1"><Clock size={16} />{e.date}</span>
+                <span className="flex items-center gap-1"><MapPin size={16} />{e.location}</span>
+                <span className="flex items-center gap-1"><Users size={16} />{e.participants} 人</span>
+              </div>
+            </Link>
+          );
+        })}
       </div>
     </div>
   );
