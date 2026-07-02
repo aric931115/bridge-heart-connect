@@ -59,5 +59,8 @@ if errorlevel 1 (
 )
 
 echo.
+echo ✅ 儲存成功！
 echo ✅ 已成功同步到 GitHub
+echo.
+echo 你的變更已經被保存並上傳完成。
 pause

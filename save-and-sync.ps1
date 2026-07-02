@@ -44,5 +44,9 @@ if ($LASTEXITCODE -ne 0) {
     exit 1
 }
 
+Write-Host "" 
+Write-Host "✅ 儲存成功！" -ForegroundColor Green
 Write-Host "✅ 已成功同步到 GitHub" -ForegroundColor Green
+Write-Host "" 
+Write-Host "你的變更已經被保存並上傳完成。" -ForegroundColor Cyan
 Read-Host "按 Enter 鍵結束"
