@@ -1,6 +1,22 @@
+<#
+使用方法：
+1. 雙擊 start-dev.ps1 啟動
+2. 如果 PowerShell 阻止執行，可先在 PowerShell 中執行：
+   Set-ExecutionPolicy -Scope Process RemoteSigned
+3. 腳本會自動檢查 Node.js、npm，並安裝依賴套件
+4. 啟動後請開啟瀏覽器到：http://localhost:8080/
+5. 如需手動啟動，可輸入：npm install 及 npm run dev
+6. 按 Ctrl+C 可停止開發伺服器
+#>
+
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host "   Bridge Heart Connect - 開發伺服器啟動" -ForegroundColor Cyan
 Write-Host "========================================" -ForegroundColor Cyan
+Write-Host ""
+Write-Host "使用說明：" -ForegroundColor Cyan
+Write-Host "  1. 雙擊此檔案即可啟動開發伺服器" -ForegroundColor Cyan
+Write-Host "  2. 啟動後請打開 http://localhost:8080/" -ForegroundColor Cyan
+Write-Host "  3. 若需要手動啟動，請執行 npm install 與 npm run dev" -ForegroundColor Cyan
 Write-Host ""
 
 # 檢查 Node.js
