@@ -91,7 +91,6 @@ export interface Activity {
   organizerAnonymous?: boolean;
   organizerProfile?: {
     name: string;
-    nickname: string;
     department: string;
     avatar: string;
   };

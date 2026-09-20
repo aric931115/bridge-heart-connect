@@ -58,12 +58,16 @@ const ActivityDetail = () => {
         {/* Info card */}
         <div className="card-accessible space-y-3">
           <button
-            onClick={() => toast.info(`發布者：${activity.organizerProfile?.name || activity.organizerName || '活動建立者'}；暱稱：${activity.organizerProfile?.nickname || '未提供'}；科系：${activity.organizerProfile?.department || '未提供'}`)}
+            onClick={() => toast.info(`發布者：${activity.organizerProfile?.name || activity.organizerName || '活動建立者'}；科系：${activity.organizerProfile?.department || '未提供'}`)}
             className="flex items-center gap-3 w-full text-left border-b border-border pb-3"
           >
-            <span className="w-14 h-14 rounded-full bg-muted flex items-center justify-center text-3xl">
-              {activity.organizerAnonymous ? '👤' : activity.organizerProfile?.avatar || '👤'}
-            </span>
+            {activity.organizerAnonymous || !activity.organizerProfile?.avatar ? (
+              <span className="w-14 h-14 rounded-full bg-muted flex items-center justify-center text-3xl">👤</span>
+            ) : activity.organizerProfile.avatar.startsWith('data:image/') || activity.organizerProfile.avatar.startsWith('http') ? (
+              <img src={activity.organizerProfile.avatar} alt="發起者頭像" className="h-14 w-14 rounded-full object-cover bg-muted" />
+            ) : (
+              <span className="w-14 h-14 rounded-full bg-muted flex items-center justify-center text-3xl">{activity.organizerProfile.avatar}</span>
+            )}
             <span>
               <span className="block text-xs text-muted-foreground">活動發起者</span>
               <span className="block font-bold">{activity.organizerAnonymous ? '匿名' : activity.organizerProfile?.name || activity.organizerName || '活動建立者'}</span>
