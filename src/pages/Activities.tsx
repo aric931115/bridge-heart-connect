@@ -9,7 +9,6 @@ import { useState } from 'react';
 
 const CATEGORY_META: Record<ActivityCategory, { label: string; icon: typeof School; color: string }> = {
   campus: { label: '校園', icon: School, color: 'text-primary bg-primary/10' },
-  limited: { label: '限時', icon: Clock, color: 'text-warning bg-warning/10' },
   private: { label: '私人', icon: Lock, color: 'text-muted-foreground bg-muted' },
 };
 
@@ -17,9 +16,15 @@ const Activities = () => {
   const { activities } = useActivities();
   const { user } = useAppContext();
   const navigate = useNavigate();
-  const [filter, setFilter] = useState<'all' | ActivityCategory>('all');
+  const [filter, setFilter] = useState<'all' | ActivityCategory | 'joined' | 'mine'>('all');
 
-  const filtered = filter === 'all' ? activities : activities.filter(a => a.category === filter);
+  const filtered = filter === 'all'
+    ? activities
+    : filter === 'joined'
+      ? activities.filter(a => a.joined || user.history.some(history => history.activityId === a.id))
+      : filter === 'mine'
+        ? activities.filter(a => a.organizerId === 'ORG-ME')
+      : activities.filter(a => a.category === filter);
 
   useVoiceAssistant(`校園活動頁面。共有${activities.length}個活動。目前身份：${user.role === 'organizer' ? '活動發起者' : '參與者'}。`);
 
@@ -37,12 +42,18 @@ const Activities = () => {
     <div className="pb-24">
       <PageHeader title="校園活動" />
       <div className="p-4 space-y-4">
-        <div className="bg-secondary text-secondary-foreground rounded-2xl p-4 font-bold text-center text-lg">
-          📢 最新公告：園遊會攤位報名延長至3月10日！
+        <div className="bg-secondary text-secondary-foreground rounded-2xl p-3 font-bold overflow-hidden">
+          <div className="flex w-max gap-10 animate-marquee whitespace-nowrap">
+            {[...activities, ...activities].map((activity, index) => (
+              <button key={`${activity.id}-${index}`} onClick={() => navigate(`/activities/${activity.id}`)} className="hover:underline">
+                📢 最新公告：{activity.title}
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* 角色提示與發起者快捷 */}
-        {user.role === 'organizer' && (
+        {(user.role === 'organizer' || e.organizerId === 'ORG-ME') && (
           <button
             onClick={() => navigate('/activities/create')}
             className="accessible-btn w-full bg-primary text-primary-foreground flex items-center justify-center gap-2"
@@ -53,7 +64,7 @@ const Activities = () => {
 
         {/* 類別篩選 */}
         <div className="flex gap-2 overflow-x-auto pb-1">
-          {(['all', 'campus', 'limited', 'private'] as const).map(k => (
+          {(['all', 'campus', 'private', 'joined', 'mine'] as const).map(k => (
             <button
               key={k}
               onClick={() => setFilter(k)}
@@ -61,7 +72,7 @@ const Activities = () => {
                 filter === k ? 'bg-primary text-primary-foreground border-primary' : 'border-border text-muted-foreground'
               }`}
             >
-              {k === 'all' ? '全部' : CATEGORY_META[k].label}
+              {k === 'all' ? '全部' : k === 'joined' ? '已加入' : k === 'mine' ? '我的活動' : CATEGORY_META[k].label}
             </button>
           ))}
         </div>
@@ -77,6 +88,15 @@ const Activities = () => {
                     <span className={`inline-flex items-center gap-1 text-xs font-bold rounded-full px-2 py-0.5 ${meta.color}`}>
                       <Icon size={12} /> {meta.label}
                     </span>
+                    {e.tags.map((tag, index) => (
+                      <span
+                        key={`${tag.label}-${index}`}
+                        className="rounded-full px-2 py-0.5 text-xs font-bold text-white"
+                        style={{ backgroundColor: tag.color }}
+                      >
+                        #{tag.label}
+                      </span>
+                    ))}
                     {e.quiz.length > 0 && (
                       <span className="inline-flex items-center gap-1 text-xs font-bold text-primary bg-primary/10 rounded-full px-2 py-0.5">
                         <Gamepad2 size={12} /> 含問答
@@ -99,7 +119,7 @@ const Activities = () => {
                     </button>
                   )}
                   <button
-                    onClick={(ev) => { ev.preventDefault(); speak(`${e.title}。${e.desc}。時間：${e.date}。地點：${e.location}`); }}
+                    onClick={(ev) => { ev.preventDefault(); speak(`${e.title}。${e.desc}。時間：${e.date}。${e.noPhysicalLocation ? '無實體地點' : `地點：${e.location}`}`); }}
                     className="w-12 h-12 rounded-xl bg-secondary text-secondary-foreground flex items-center justify-center active:scale-90"
                     aria-label={`朗讀 ${e.title}`}
                   >
@@ -109,9 +129,9 @@ const Activities = () => {
               </div>
               <p className="text-muted-foreground">{e.desc}</p>
               <div className="flex flex-wrap gap-3 text-sm text-muted-foreground">
-                <span className="flex items-center gap-1"><Clock size={16} />{e.date}</span>
-                <span className="flex items-center gap-1"><MapPin size={16} />{e.location}</span>
-                <span className="flex items-center gap-1"><Users size={16} />{e.participants} 人</span>
+                <span className="flex items-center gap-1"><Clock size={16} />{e.date}{e.endDate !== e.date ? `–${e.endDate}` : ''} {e.startTime}–{e.endTime}</span>
+                {!e.noPhysicalLocation && <span className="flex items-center gap-1"><MapPin size={16} />{e.location}</span>}
+                <span className="flex items-center gap-1"><Users size={16} />{e.maxParticipants > 0 ? `${e.participants}/${e.maxParticipants} 人` : `${e.participants} 人`}</span>
               </div>
             </Link>
           );

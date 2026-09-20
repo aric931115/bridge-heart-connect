@@ -1,14 +1,14 @@
 import { useParams, useNavigate } from 'react-router-dom';
-import { Users, CheckCircle2, Circle, Award, BarChart3, StopCircle, Copy, QrCode, Gift } from 'lucide-react';
+import { Users, CheckCircle2, Circle, Award, BarChart3, StopCircle, Copy, Gift, Trash2 } from 'lucide-react';
 import PageHeader from '@/components/PageHeader';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
-import { useActivities, TASK_TYPE_LABELS } from '@/hooks/useActivities';
+import { useActivities } from '@/hooks/useActivities';
 
 const ManageActivity = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { activities, verifyTask, endActivity, distributeRewards } = useActivities();
+  const { activities, verifyTask, endActivity, deleteActivity, distributeRewards } = useActivities();
   const activity = activities.find(a => a.id === Number(id));
 
   if (!activity) {
@@ -27,7 +27,8 @@ const ManageActivity = () => {
   const completionRate = activity.participantList.length > 0
     ? Math.round((completedCount / activity.participantList.length) * 100)
     : 0;
-  const totalPointsIssued = completedCount * activity.rewardPoints;
+  const totalPointsAvailable = activity.tasks.reduce((sum, task) => sum + task.points, 0)
+    + activity.quiz.reduce((sum, question) => sum + question.points, 0);
 
   return (
     <div className="pb-24">
@@ -43,21 +44,32 @@ const ManageActivity = () => {
               {activity.status === 'active' ? '進行中' : '已結束'}
             </span>
           </div>
+          <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 text-center space-y-3">
+            <p className="font-bold text-foreground">建立者專屬代碼</p>
+            <p className="text-xl font-bold tracking-widest text-primary">{activity.organizerQrCode}</p>
+            <p className="text-sm font-bold text-destructive">請保存好此代碼，參與者需取得代碼才能完成任務。</p>
+          </div>
+          <p className="text-sm text-muted-foreground">
+            活動時間：{activity.date}{activity.endDate !== activity.date ? `–${activity.endDate}` : ''} {activity.startTime}–{activity.endTime}
+            {' · '}人數上限：{activity.maxParticipants > 0 ? activity.maxParticipants : '不限'}
+          </p>
           <div className="flex gap-2">
             <button
-              onClick={() => { navigator.clipboard.writeText(activity.roomCode); toast.success('已複製代碼！'); }}
+              onClick={() => {
+                const input = document.createElement('textarea');
+                input.value = activity.roomCode;
+                document.body.appendChild(input);
+                input.select();
+                const copied = document.execCommand('copy');
+                input.remove();
+                if (copied) toast.success('已複製代碼！');
+                else toast.error('複製失敗，請手動記下代碼');
+              }}
               className="flex-1 flex items-center justify-center gap-2 bg-muted rounded-xl px-3 py-3 active:scale-95"
             >
               <span className="text-sm text-muted-foreground">代碼</span>
               <span className="font-bold tracking-widest">{activity.roomCode}</span>
               <Copy size={14} className="text-muted-foreground" />
-            </button>
-            <button
-              onClick={() => toast.info('QR Code 分享（原型）')}
-              className="bg-muted rounded-xl px-4 active:scale-95"
-              aria-label="QR Code"
-            >
-              <QrCode size={20} />
             </button>
           </div>
         </div>
@@ -81,8 +93,8 @@ const ManageActivity = () => {
               <p className="text-2xl font-bold text-primary">{avgProgress}%</p>
             </div>
             <div className="bg-muted rounded-xl p-3">
-              <p className="text-xs text-muted-foreground">積分發放</p>
-              <p className="text-2xl font-bold text-primary">{totalPointsIssued}</p>
+              <p className="text-xs text-muted-foreground">任務積分總額</p>
+              <p className="text-2xl font-bold text-primary">{totalPointsAvailable}</p>
             </div>
           </div>
         </div>
@@ -141,8 +153,8 @@ const ManageActivity = () => {
               </button>
               <div className="flex-1">
                 <p className="font-bold text-foreground">{t.title}</p>
-                <p className="text-xs text-muted-foreground">{TASK_TYPE_LABELS[t.type]}</p>
                 {t.desc && <p className="text-sm text-muted-foreground">{t.desc}</p>}
+                <p className="text-xs text-muted-foreground">完成 {t.completedCount}/{t.targetCount} 次 · {t.points} 分</p>
               </div>
             </div>
           ))}
@@ -171,6 +183,19 @@ const ManageActivity = () => {
           ) : (
             <div className="bg-muted rounded-2xl p-4 text-center text-muted-foreground font-bold">活動已結束</div>
           )}
+          <Button
+            variant="destructive"
+            onClick={() => {
+              if (window.confirm('確定要刪除此活動嗎？刪除後無法復原。')) {
+                deleteActivity(activity.id);
+                toast.success('活動已刪除');
+                navigate('/activities');
+              }
+            }}
+            className="w-full h-14 text-lg font-bold rounded-2xl gap-2"
+          >
+            <Trash2 size={22} /> 刪除活動
+          </Button>
         </div>
       </div>
     </div>

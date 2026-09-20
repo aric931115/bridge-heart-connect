@@ -9,9 +9,10 @@ import { useAppContext } from '@/contexts/AppContext';
 const ActivityDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { activities, joinActivity, toggleTask } = useActivities();
-  const { user } = useAppContext();
+  const { activities, joinActivity } = useActivities();
+  const { user, addHistoryEntry } = useAppContext();
   const activity = activities.find(a => a.id === Number(id));
+  const alreadyJoined = Boolean(activity && (activity.joined || user.history.some(history => history.activityId === activity.id)));
 
   if (!activity) {
     return (
@@ -33,7 +34,19 @@ const ActivityDetail = () => {
   };
 
   const handleJoin = () => {
-    joinActivity(activity.id);
+    const joined = joinActivity(activity.id);
+    if (!joined) {
+      toast.info('您已參加過此活動，不能重複加入。');
+      return;
+    }
+    addHistoryEntry({
+      activityId: activity.id,
+      title: activity.title,
+      date: activity.date,
+      pointsEarned: 0,
+      joinedAt: new Date().toLocaleString('zh-TW', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' }),
+      completed: false,
+    });
     toast.success('已成功加入活動！');
   };
 
@@ -54,7 +67,7 @@ const ActivityDetail = () => {
               )}
             </div>
             <button
-              onClick={() => speak(`${activity.title}。${activity.content}。時間：${activity.date}。地點：${activity.location}`)}
+              onClick={() => speak(`${activity.title}。${activity.content}。時間：${activity.date}。${activity.noPhysicalLocation ? '無實體地點' : `地點：${activity.location}`}`)}
               className="w-12 h-12 rounded-xl bg-secondary text-secondary-foreground flex items-center justify-center active:scale-90 transition-transform flex-shrink-0"
               aria-label="朗讀活動內容"
             >
@@ -63,17 +76,23 @@ const ActivityDetail = () => {
           </div>
 
           <div className="flex flex-wrap gap-3 text-sm text-muted-foreground">
-            <span className="flex items-center gap-1"><Clock size={16} />{activity.date}</span>
-            <span className="flex items-center gap-1"><MapPin size={16} />{activity.location}</span>
-            <span className="flex items-center gap-1"><Users size={16} />{activity.participants} 人已加入</span>
+            <span className="flex items-center gap-1"><Clock size={16} />{activity.date}{activity.endDate !== activity.date ? `–${activity.endDate}` : ''} {activity.startTime}–{activity.endTime}</span>
+            {!activity.noPhysicalLocation && <span className="flex items-center gap-1"><MapPin size={16} />{activity.location}</span>}
+            <span className="flex items-center gap-1"><Users size={16} />{activity.maxParticipants > 0 ? `${activity.participants}/${activity.maxParticipants} 人` : `${activity.participants} 人`}已加入</span>
           </div>
 
           {/* Room code */}
-          {activity.roomCode && (
+          {alreadyJoined && activity.roomCode && (
             <button
               onClick={() => {
-                navigator.clipboard.writeText(activity.roomCode);
-                toast.success(`房間代碼 ${activity.roomCode} 已複製！`);
+                const input = document.createElement('textarea');
+                input.value = activity.roomCode;
+                document.body.appendChild(input);
+                input.select();
+                const copied = document.execCommand('copy');
+                input.remove();
+                if (copied) toast.success(`房間代碼 ${activity.roomCode} 已複製！`);
+                else toast.error('複製失敗，請手動記下房間代碼');
               }}
               className="flex items-center gap-2 bg-muted rounded-xl px-4 py-2 active:scale-95 transition-transform"
             >
@@ -85,19 +104,22 @@ const ActivityDetail = () => {
 
           <div className="pt-2 border-t border-border">
             <p className="text-foreground leading-relaxed">{activity.content}</p>
+            <p className="mt-3 text-sm text-muted-foreground">
+              發布者：{activity.organizerAnonymous ? '匿名' : activity.organizerName || '活動建立者'}
+            </p>
           </div>
         </div>
 
         {/* Organizer manage entry */}
-        {user.role === 'organizer' && (
+        {(user.role === 'organizer' || activity.organizerId === 'ORG-ME') && (
           <Button onClick={() => navigate(`/activities/${activity.id}/manage`)} variant="secondary" className="w-full h-14 text-lg font-bold rounded-2xl gap-2">
             <Settings2 size={22} /> 管理此活動
           </Button>
         )}
 
         {/* Join button */}
-        {!activity.joined ? (
-          <Button onClick={handleJoin} className="w-full h-14 text-lg font-bold rounded-2xl gap-2" size="lg">
+        {!alreadyJoined ? (
+          <Button onClick={handleJoin} disabled={activity.maxParticipants > 0 && activity.participants >= activity.maxParticipants} className="w-full h-14 text-lg font-bold rounded-2xl gap-2" size="lg">
             <LogIn size={22} /> 加入活動
           </Button>
         ) : (
@@ -109,30 +131,24 @@ const ActivityDetail = () => {
         {/* Tasks preview */}
         <div className="space-y-3">
           <h3 className="text-lg font-bold text-foreground">📋 活動任務</h3>
-          {!activity.joined && (
+          {!alreadyJoined && (
             <p className="text-sm text-muted-foreground">加入活動後即可進入任務房間</p>
           )}
 
           {activity.tasks.map(task => (
-            <div key={task.id} className={`card-accessible flex items-start gap-3 ${!activity.joined ? 'opacity-60' : ''}`}>
-              <button
-                disabled={!activity.joined}
-                onClick={() => {
-                  toggleTask(activity.id, task.id);
-                  toast.success(task.completed ? '已取消完成' : '任務已完成！');
-                }}
-                className="mt-0.5 flex-shrink-0"
-              >
+            <div key={task.id} className={`card-accessible flex items-start gap-3 ${!alreadyJoined ? 'opacity-60' : ''}`}>
+              <div className="mt-0.5 flex-shrink-0">
                 {task.completed ? <CheckCircle2 size={28} className="text-primary" /> : <Circle size={28} className="text-muted-foreground" />}
-              </button>
+              </div>
               <div className="flex-1">
                 <p className={`font-bold text-foreground ${task.completed ? 'line-through opacity-60' : ''}`}>{task.title}</p>
                 <p className="text-sm text-muted-foreground">{task.desc}</p>
+                <p className="text-xs text-muted-foreground mt-1">完成進度：{task.completedCount}/{task.targetCount}</p>
               </div>
             </div>
           ))}
 
-          {activity.joined && (
+          {alreadyJoined && (
             <Link to={`/activities/${activity.id}/room`} className="block">
               <Button variant="secondary" className="w-full h-14 text-lg font-bold rounded-2xl gap-2">
                 🚪 進入任務房間

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { CheckCircle2, Circle, MessageCircle, Users, Award, Copy, HelpCircle } from 'lucide-react';
+import { CheckCircle2, Circle, MessageCircle, Users, Award, Copy, HelpCircle, ScanLine } from 'lucide-react';
 import PageHeader from '@/components/PageHeader';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
@@ -8,9 +8,17 @@ import { useActivities } from '@/hooks/useActivities';
 
 const TaskRoom = () => {
   const { id } = useParams();
-  const { activities, toggleTask, answerQuiz, claimReward } = useActivities();
+  const { activities, scanOrganizerQr, answerQuiz, claimReward } = useActivities();
   const activity = activities.find(a => a.id === Number(id));
-  const [selectedAnswers, setSelectedAnswers] = useState<Record<number, number>>({});
+  const [selectedAnswers, setSelectedAnswers] = useState<Record<number, number[]>>({});
+  const [scanCode, setScanCode] = useState('');
+  const [selectedMatch, setSelectedMatch] = useState<{ side: 'name' | 'image'; id: number } | null>(null);
+  const [matchedFruit, setMatchedFruit] = useState<number[]>([]);
+  const fruits = [
+    { id: 1, name: '香蕉', image: '🍌' },
+    { id: 2, name: '蘋果', image: '🍎' },
+    { id: 3, name: '西瓜', image: '🍉' },
+  ];
 
   if (!activity) {
     return (
@@ -32,18 +40,26 @@ const TaskRoom = () => {
   const canClaimReward = allComplete && !activity.rewardClaimed;
 
   const handleAnswer = (quizId: number, selectedIndex: number) => {
-    setSelectedAnswers(prev => ({ ...prev, [quizId]: selectedIndex }));
+    setSelectedAnswers(prev => {
+      const current = prev[quizId] || [];
+      return {
+        ...prev,
+        [quizId]: current.includes(selectedIndex)
+          ? current.filter(index => index !== selectedIndex)
+          : [...current, selectedIndex],
+      };
+    });
   };
 
   const submitAnswer = (quizId: number) => {
-    const selected = selectedAnswers[quizId];
-    if (selected === undefined) {
+    const selected = selectedAnswers[quizId] || [];
+    if (selected.length === 0) {
       toast.error('請先選擇一個答案');
       return;
     }
     answerQuiz(activity.id, quizId, selected);
     const q = activity.quiz.find(q => q.id === quizId);
-    if (q && q.correctIndex === selected) {
+    if (q && q.correctIndexes.length === selected.length && q.correctIndexes.every(index => selected.includes(index))) {
       toast.success('答對了！🎉');
     } else {
       toast.error('答錯了，再接再厲！');
@@ -51,8 +67,22 @@ const TaskRoom = () => {
   };
 
   const copyRoomCode = () => {
-    navigator.clipboard.writeText(activity.roomCode);
-    toast.success(`房間代碼 ${activity.roomCode} 已複製！`);
+    const fallback = () => {
+      const input = document.createElement('textarea');
+      input.value = activity.roomCode;
+      document.body.appendChild(input);
+      input.select();
+      document.execCommand('copy');
+      input.remove();
+    };
+    if (navigator.clipboard?.writeText) {
+      navigator.clipboard.writeText(activity.roomCode)
+        .then(() => toast.success(`房間代碼 ${activity.roomCode} 已複製！`))
+        .catch(() => { fallback(); toast.success(`房間代碼 ${activity.roomCode} 已複製！`); });
+    } else {
+      fallback();
+      toast.success(`房間代碼 ${activity.roomCode} 已複製！`);
+    }
   };
 
   return (
@@ -102,28 +132,112 @@ const TaskRoom = () => {
             <h3 className="text-lg font-bold text-foreground">📋 任務清單</h3>
             {activity.tasks.map(task => (
               <div key={task.id} className="card-accessible flex items-start gap-3">
-                <button
-                  onClick={() => {
-                    toggleTask(activity.id, task.id);
-                    toast.success(task.completed ? '已取消完成' : '做得好！任務已完成 🎉');
-                  }}
-                  className="mt-0.5 flex-shrink-0"
-                  aria-label={task.completed ? '取消完成' : '標記為完成'}
-                >
-                  {task.completed ? (
-                    <CheckCircle2 size={28} className="text-primary" />
-                  ) : (
-                    <Circle size={28} className="text-muted-foreground" />
-                  )}
-                </button>
+                <div className="mt-0.5 flex-shrink-0">
+                  {task.completed ? <CheckCircle2 size={28} className="text-primary" /> : <Circle size={28} className="text-muted-foreground" />}
+                </div>
                 <div className="flex-1">
                   <p className={`font-bold text-foreground ${task.completed ? 'line-through opacity-60' : ''}`}>
                     {task.title}
                   </p>
                   <p className="text-sm text-muted-foreground">{task.desc}</p>
+                  <div className="mt-2 space-y-1">
+                    <div className="flex justify-between text-xs text-muted-foreground">
+                      <span>完成進度</span>
+                      <span className="font-bold text-primary">{task.completedCount}/{task.targetCount}</span>
+                    </div>
+                    <div className="h-2 rounded-full bg-muted overflow-hidden">
+                      <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${Math.min(100, (task.completedCount / task.targetCount) * 100)}%` }} />
+                    </div>
+                  </div>
+                  {!task.completed && (
+                    <div className="mt-3 flex gap-2">
+                      <input
+                        value={scanCode}
+                        onChange={e => setScanCode(e.target.value.toUpperCase())}
+                        placeholder="輸入活動建立者的專屬代碼"
+                        className="min-w-0 flex-1 rounded-xl border-2 border-input bg-background px-3 py-2 text-sm"
+                      />
+                      <Button
+                        variant="secondary"
+                        className="gap-1 rounded-xl"
+                        onClick={() => {
+                          const result = scanOrganizerQr(activity.id, task.id, scanCode);
+                          if (result.completed) {
+                            setScanCode('');
+                            toast.success('代碼驗證成功，任務已完成！');
+                          } else if (result.valid) {
+                            setScanCode('');
+                            toast.success('代碼驗證成功，已增加一次完成進度！');
+                          } else {
+                            toast.error('代碼無效，請向活動建立者確認。');
+                          }
+                        }}
+                      >
+                        <ScanLine size={16} /> 驗證
+                      </Button>
+                    </div>
+                  )}
                 </div>
               </div>
             ))}
+          </div>
+        )}
+
+        {activity.roomGames?.includes('image-match') && (
+          <div className="space-y-3">
+            <h3 className="text-lg font-bold text-foreground">🎮 水果配對遊戲</h3>
+            <p className="text-sm text-muted-foreground">先點選左側水果名稱或右側圖片，再點選另一側的對應項目。</p>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                {fruits.map(fruit => (
+                  <button
+                    key={fruit.id}
+                    disabled={matchedFruit.includes(fruit.id)}
+                    onClick={() => {
+                      if (selectedMatch?.side === 'image') {
+                        if (selectedMatch.id === fruit.id) {
+                          setMatchedFruit([...matchedFruit, fruit.id]);
+                          toast.success('配對成功！');
+                        } else toast.error('配對不正確，請再試一次');
+                        setSelectedMatch(null);
+                      } else setSelectedMatch({ side: 'name', id: fruit.id });
+                    }}
+                    className={`w-full rounded-xl border-2 p-3 font-bold ${
+                      matchedFruit.includes(fruit.id) ? 'border-primary bg-primary/10 text-primary' :
+                      selectedMatch?.side === 'name' && selectedMatch.id === fruit.id ? 'border-primary bg-primary/10' : 'border-border'
+                    }`}
+                  >
+                    {fruit.name}
+                  </button>
+                ))}
+              </div>
+              <div className="space-y-2">
+                {fruits.map(fruit => (
+                  <button
+                    key={fruit.id}
+                    disabled={matchedFruit.includes(fruit.id)}
+                    onClick={() => {
+                      if (selectedMatch?.side === 'name') {
+                        if (selectedMatch.id === fruit.id) {
+                          setMatchedFruit([...matchedFruit, fruit.id]);
+                          toast.success('配對成功！');
+                        } else toast.error('配對不正確，請再試一次');
+                        setSelectedMatch(null);
+                      } else setSelectedMatch({ side: 'image', id: fruit.id });
+                    }}
+                    className={`w-full rounded-xl border-2 p-2 text-4xl ${
+                      matchedFruit.includes(fruit.id) ? 'border-primary bg-primary/10' :
+                      selectedMatch?.side === 'image' && selectedMatch.id === fruit.id ? 'border-primary bg-primary/10' : 'border-border'
+                    }`}
+                  >
+                    {fruit.image}
+                  </button>
+                ))}
+              </div>
+            </div>
+            {matchedFruit.length === fruits.length && (
+              <p className="rounded-xl bg-primary/10 p-3 text-center font-bold text-primary">水果配對完成！</p>
+            )}
           </div>
         )}
 
@@ -140,10 +254,11 @@ const TaskRoom = () => {
                 <p className="font-bold text-foreground">
                   第 {qIdx + 1} 題：{q.question}
                 </p>
+                <p className="text-xs text-muted-foreground">答對可得 {q.points} 分</p>
 
                 {q.answered ? (
                   <div className={`rounded-xl p-3 text-center font-bold ${q.correct ? 'bg-primary/10 text-primary' : 'bg-destructive/10 text-destructive'}`}>
-                    {q.correct ? '✅ 答對了！' : `❌ 答錯了（正確答案：${q.options[q.correctIndex]}）`}
+                    {q.correct ? '✅ 答對了！' : `❌ 答錯了（正確答案：${q.correctIndexes.map(index => q.options[index]).join('、')}）`}
                   </div>
                 ) : (
                   <>
@@ -153,7 +268,7 @@ const TaskRoom = () => {
                           key={optIdx}
                           onClick={() => handleAnswer(q.id, optIdx)}
                           className={`w-full text-left px-4 py-3 rounded-xl border-2 transition-all font-medium ${
-                            selectedAnswers[q.id] === optIdx
+                            selectedAnswers[q.id]?.includes(optIdx)
                               ? 'border-primary bg-primary/10 text-primary'
                               : 'border-border bg-background text-foreground hover:border-primary/40'
                           }`}
@@ -165,7 +280,7 @@ const TaskRoom = () => {
                     <Button
                       onClick={() => submitAnswer(q.id)}
                       className="w-full rounded-xl"
-                      disabled={selectedAnswers[q.id] === undefined}
+                      disabled={!selectedAnswers[q.id]?.length}
                     >
                       提交答案
                     </Button>

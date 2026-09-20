@@ -20,7 +20,8 @@ export interface UserHistoryEntry {
   title: string;
   date: string;
   pointsEarned: number;
-  completedAt: string;
+  joinedAt: string;
+  completed: boolean;
 }
 
 interface UserProfile {
@@ -48,15 +49,9 @@ const defaultUser: UserProfile = {
   id: 'USR-0001',
   name: '同學',
   role: 'participant',
-  points: 120,
-  achievements: [
-    { id: 'a1', title: '活動新星', desc: '首次完成活動任務', unlockedAt: '3月1日' },
-    { id: 'a2', title: '問答達人', desc: '連續答對 3 題問答', unlockedAt: '3月10日' },
-  ],
-  history: [
-    { activityId: 1, title: '校園愛心園遊會', date: '3月15日', pointsEarned: 50, completedAt: '3月15日' },
-    { activityId: 2, title: '環保小尖兵', date: '3月20日', pointsEarned: 70, completedAt: '3月20日' },
-  ],
+  points: 0,
+  achievements: [],
+  history: [],
 };
 
 export const AppProvider = ({ children }: { children: ReactNode }) => {
@@ -73,7 +68,9 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const setRole = (role: UserRole) => setUser(u => ({ ...u, role }));
   const addPoints = (amount: number) => setUser(u => ({ ...u, points: u.points + amount }));
   const addHistoryEntry = (entry: UserHistoryEntry) =>
-    setUser(u => ({ ...u, history: [entry, ...u.history] }));
+    setUser(u => u.history.some(historyEntry => historyEntry.activityId === entry.activityId)
+      ? u
+      : { ...u, history: [entry, ...u.history] });
   const unlockAchievement = (a: UserAchievement) =>
     setUser(u => u.achievements.some(x => x.id === a.id) ? u : { ...u, achievements: [a, ...u.achievements] });
 

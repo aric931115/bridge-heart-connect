@@ -4,6 +4,7 @@ import PageHeader from '@/components/PageHeader';
 import { toast } from 'sonner';
 import { useVoiceAssistant } from '@/hooks/useVoiceAssistant';
 import { useAppContext } from '@/contexts/AppContext';
+import { useActivities } from '@/hooks/useActivities';
 
 type View = 'main' | 'login' | 'signup' | 'forgot' | 'changePw' | 'career';
 
@@ -11,6 +12,8 @@ const Account = () => {
   const [view, setView] = useState<View>('main');
   const [showPw, setShowPw] = useState(false);
   const { user } = useAppContext();
+  const { activities } = useActivities();
+  const [selectedHistoryId, setSelectedHistoryId] = useState<string | null>(null);
 
   useVoiceAssistant(
     view === 'main' ? `帳戶管理。目前身份：${user.role === 'organizer' ? '活動發起者' : '參與者'}，累積${user.points}積分。`
@@ -22,16 +25,19 @@ const Account = () => {
   );
 
   if (view === 'career') {
+    const sortedHistory = [...user.history].sort((a, b) => b.joinedAt.localeCompare(a.joinedAt));
+    const selectedHistory = sortedHistory.find((entry, index) => `${entry.activityId}-${index}` === selectedHistoryId);
+    const selectedActivity = selectedHistory ? activities.find(activity => activity.id === selectedHistory.activityId) : undefined;
     return (
       <div className="pb-24">
         <PageHeader title="我的生涯" showBack />
         <div className="p-4 space-y-5">
-          <div className="card-accessible bg-primary text-primary-foreground flex items-center gap-4">
-            <div className="w-16 h-16 rounded-full bg-primary-foreground/20 flex items-center justify-center">
+          <div className="card-accessible bg-secondary text-foreground flex items-center gap-4">
+            <div className="w-16 h-16 rounded-full bg-foreground/10 flex items-center justify-center">
               <Coins size={32} />
             </div>
             <div>
-              <p className="text-sm opacity-80">累積積分</p>
+              <p className="text-sm opacity-80">總積分</p>
               <p className="text-3xl font-bold">{user.points}</p>
             </div>
           </div>
@@ -52,13 +58,32 @@ const Account = () => {
 
           <div className="space-y-3">
             <h2 className="text-lg font-bold flex items-center gap-2"><History size={20} /> 歷史參與紀錄</h2>
-            {user.history.map(h => (
-              <div key={h.activityId} className="card-accessible flex items-center justify-between">
-                <div>
-                  <p className="font-bold">{h.title}</p>
-                  <p className="text-sm text-muted-foreground">完成於 {h.completedAt}</p>
-                </div>
-                <span className="text-primary font-bold">+{h.pointsEarned}</span>
+            {sortedHistory.length === 0 ? (
+              <div className="card-accessible text-center space-y-3">
+                <p className="font-bold">還沒參加活動嗎？快去參加吧！</p>
+                <button onClick={() => window.history.back()} className="text-primary font-bold">返回</button>
+              </div>
+            ) : sortedHistory.map((h, index) => (
+              <div key={`${h.activityId}-${index}`} className={`rounded-2xl ${h.completed ? '' : 'bg-slate-300/80 dark:bg-slate-700/80 p-1'}`}>
+                <button
+                  onClick={() => setSelectedHistoryId(selectedHistoryId === `${h.activityId}-${index}` ? null : `${h.activityId}-${index}`)}
+                  className={`card-accessible w-full flex items-center justify-between text-left ${h.completed ? '' : 'bg-slate-200 dark:bg-slate-700'}`}
+                >
+                  <div>
+                    <p className="font-bold">{h.title}</p>
+                    <p className="text-sm text-muted-foreground">參加日期：{h.joinedAt}</p>
+                    {h.completed && <p className="text-xs font-bold text-primary">已完成</p>}
+                    {!h.completed && <p className="text-xs font-bold text-slate-600 dark:text-slate-300">尚未完成</p>}
+                  </div>
+                  <span className="text-primary font-bold">+{h.pointsEarned}</span>
+                </button>
+                {selectedHistoryId === `${h.activityId}-${index}` && selectedActivity && (
+                  <div className="px-4 pb-4 pt-2 space-y-1">
+                    <p className="text-sm text-muted-foreground">活動時間：{selectedActivity.date}{selectedActivity.endDate !== selectedActivity.date ? `–${selectedActivity.endDate}` : ''} {selectedActivity.startTime}–{selectedActivity.endTime}</p>
+                    <p className="text-sm text-muted-foreground">活動地點：{selectedActivity.location}</p>
+                    <p className="text-xs text-muted-foreground">僅供查看歷史活動資訊，不能重新進入任務房間。</p>
+                  </div>
+                )}
               </div>
             ))}
           </div>

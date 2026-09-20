@@ -1,22 +1,23 @@
 import { useState } from 'react';
-import { QrCode, Plus, Hand, Image, Keyboard, Gamepad2, CalendarPlus } from 'lucide-react';
+import { QrCode, Keyboard, CalendarPlus } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import PageHeader from '@/components/PageHeader';
 import { toast } from 'sonner';
 import { useVoiceAssistant } from '@/hooks/useVoiceAssistant';
 import { useActivities } from '@/hooks/useActivities';
+import { useAppContext } from '@/contexts/AppContext';
 
-type View = 'main' | 'join' | 'create';
+type View = 'main' | 'join';
 
 const Games = () => {
   const [view, setView] = useState<View>('main');
   const [roomCode, setRoomCode] = useState('');
   const navigate = useNavigate();
   const { joinByCode } = useActivities();
+  const { addHistoryEntry } = useAppContext();
 
-  const voiceText = view === 'main' ? '遊玩頁面。你可以選擇加入房間、創建房間或建立新活動。'
-    : view === 'join' ? '加入房間頁面。可以掃描 QR Code 或輸入房間代碼。'
-    : '創建房間頁面。可以選擇遊戲模式。';
+  const voiceText = view === 'main' ? '創造與加入頁面。你可以加入活動房間或建立新活動。'
+    : '加入房間頁面。可以輸入房間代碼。';
   useVoiceAssistant(voiceText);
 
   const handleJoinByCode = () => {
@@ -26,6 +27,14 @@ const Games = () => {
     }
     const activity = joinByCode(roomCode.trim());
     if (activity) {
+      addHistoryEntry({
+        activityId: activity.id,
+        title: activity.title,
+        date: activity.date,
+        pointsEarned: 0,
+        joinedAt: new Date().toLocaleString('zh-TW', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' }),
+        completed: false,
+      });
       toast.success(`已加入「${activity.title}」！`);
       navigate(`/activities/${activity.id}/room`);
     } else {
@@ -67,44 +76,9 @@ const Games = () => {
     );
   }
 
-  if (view === 'create') {
-    return (
-      <div className="pb-24">
-        <PageHeader title="創建房間" showBack />
-        <div className="p-6 space-y-6">
-          <p className="text-muted-foreground text-lg">選擇遊戲模式：</p>
-          <button
-            onClick={() => toast.success('已創建「簡單手勢任務」房間！')}
-            className="accessible-btn w-full bg-primary text-primary-foreground flex items-center gap-4 px-6"
-          >
-            <div className="w-14 h-14 rounded-xl bg-primary-foreground/20 flex items-center justify-center flex-shrink-0">
-              <Hand size={32} />
-            </div>
-            <div className="text-left">
-              <div className="text-lg">簡單手勢任務</div>
-              <div className="text-sm opacity-80 font-normal">模仿手勢，完成挑戰！</div>
-            </div>
-          </button>
-          <button
-            onClick={() => toast.success('已創建「圖像配對遊戲」房間！')}
-            className="accessible-btn w-full bg-secondary text-secondary-foreground flex items-center gap-4 px-6"
-          >
-            <div className="w-14 h-14 rounded-xl bg-secondary-foreground/10 flex items-center justify-center flex-shrink-0">
-              <Image size={32} />
-            </div>
-            <div className="text-left">
-              <div className="text-lg">圖像配對遊戲</div>
-              <div className="text-sm opacity-70 font-normal">找到相同的圖片配對！</div>
-            </div>
-          </button>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="pb-24">
-      <PageHeader title="遊玩" />
+      <PageHeader title="創造與加入" />
       <div className="p-6 space-y-5">
         <button
           onClick={() => setView('join')}
@@ -112,13 +86,6 @@ const Games = () => {
         >
           <Keyboard size={36} /> 加入房間
         </button>
-        <button
-          onClick={() => setView('create')}
-          className="accessible-btn w-full bg-secondary text-secondary-foreground flex items-center justify-center gap-3 py-8 text-xl"
-        >
-          <Gamepad2 size={36} /> 創建房間
-        </button>
-
         <div className="relative flex items-center py-2">
           <div className="flex-1 border-t border-border" />
           <span className="px-4 text-sm text-muted-foreground">活動連結</span>

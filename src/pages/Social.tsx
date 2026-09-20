@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Search, QrCode, UserPlus, Trophy, Star, Music, Palette, BookOpen } from 'lucide-react';
+import { Search, UserPlus, Trophy, Star, Music, Palette, BookOpen } from 'lucide-react';
 import PageHeader from '@/components/PageHeader';
 import { toast } from 'sonner';
 import { useVoiceAssistant } from '@/hooks/useVoiceAssistant';
@@ -27,7 +27,7 @@ const Social = () => {
 
   useVoiceAssistant(
     view === 'list' ? `社交頁面。你有${friends.filter(f => f.status === '在線').length}位好友在線。`
-    : view === 'add' ? '加入好友頁面。可以輸入好友 ID 或掃描 QR Code。'
+    : view === 'add' ? '加入好友頁面。可以輸入好友 ID。'
     : view === 'profile' ? `好友資料：${selectedFriend.name}，狀態${selectedFriend.status}。`
     : '成就頁面。'
   );
@@ -54,12 +54,6 @@ const Social = () => {
               </button>
             </div>
           </div>
-          <button
-            onClick={() => toast.info('QR Code 掃描功能（原型展示）')}
-            className="accessible-btn w-full bg-secondary text-secondary-foreground flex items-center justify-center gap-3"
-          >
-            <QrCode size={28} /> 掃描 QR Code 加好友
-          </button>
         </div>
       </div>
     );
@@ -102,7 +96,9 @@ const Social = () => {
   if (view === 'achievements') {
     const achievements = [
       { title: '社交蝴蝶', desc: '加入 5 位好友', done: true },
-      { title: '遊戲高手', desc: '完成 10 場遊戲', done: false },
+      { title: '任務完成者', desc: '完成 5 個活動任務', done: false },
+      { title: '現場簽到王', desc: '完成 3 次活動簽到', done: false },
+      { title: '知識挑戰家', desc: '答對 5 題活動問答', done: false },
       { title: '活動達人', desc: '參加 3 場活動', done: true },
     ];
     return (
