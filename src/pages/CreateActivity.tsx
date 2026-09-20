@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
+import { useAppContext } from '@/contexts/AppContext';
 import {
   useActivities,
   ActivityTask,
@@ -43,6 +44,7 @@ const ROOM_GAME_OPTIONS = [
 const CreateActivity = () => {
   const navigate = useNavigate();
   const { activities, addActivity } = useActivities();
+  const { user } = useAppContext();
 
   const [title, setTitle] = useState('');
   const [date, setDate] = useState('');
@@ -206,6 +208,12 @@ const CreateActivity = () => {
       location: location.trim(),
       noPhysicalLocation,
       organizerAnonymous,
+      organizerProfile: {
+        name: user.name,
+        nickname: user.nickname,
+        department: user.department,
+        avatar: user.avatar,
+      },
       desc: desc.trim(),
       content: content.trim() || desc.trim(),
       category,
@@ -614,18 +622,20 @@ const CreateActivity = () => {
                 >
                   + 新增選項
                 </button>
-                <label className="text-xs font-bold text-muted-foreground">答對可得積分（每題上限 5 分）</label>
-                <Input
-                  type="number"
-                  min={0}
-                  max={5}
-                  value={quiz.points}
-                  onChange={e => setQuizzes(quizzes.map((q, i) =>
-                    i === qIdx ? { ...q, points: Math.min(5, Math.max(0, Number(e.target.value) || 0)) } : q
-                  ))}
-                  placeholder="輸入答對可得積分"
-                  className="h-10 text-sm rounded-xl"
-                />
+                <div className="space-y-2">
+                  <label className="block text-xs font-bold text-muted-foreground">答對可得積分（每題上限 5 分）</label>
+                  <Input
+                    type="number"
+                    min={0}
+                    max={5}
+                    value={quiz.points}
+                    onChange={e => setQuizzes(quizzes.map((q, i) =>
+                      i === qIdx ? { ...q, points: Math.min(5, Math.max(0, Number(e.target.value) || 0)) } : q
+                    ))}
+                    placeholder="輸入答對可得積分"
+                    className="h-10 text-sm rounded-xl"
+                  />
+                </div>
               </div>
             ))}
 

@@ -1,4 +1,5 @@
 import { useParams, useNavigate } from 'react-router-dom';
+import { useState } from 'react';
 import { Users, CheckCircle2, Circle, Award, BarChart3, StopCircle, Copy, Gift, Trash2 } from 'lucide-react';
 import PageHeader from '@/components/PageHeader';
 import { Button } from '@/components/ui/button';
@@ -9,6 +10,7 @@ const ManageActivity = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { activities, verifyTask, endActivity, deleteActivity, distributeRewards } = useActivities();
+  const [selectedParticipantId, setSelectedParticipantId] = useState<string | null>(null);
   const activity = activities.find(a => a.id === Number(id));
 
   if (!activity) {
@@ -108,7 +110,7 @@ const ManageActivity = () => {
             <div className="card-accessible text-center text-muted-foreground py-6">尚無參與者</div>
           ) : (
             activity.participantList.map(p => (
-              <div key={p.id} className="card-accessible space-y-2">
+              <div key={p.id} onClick={() => setSelectedParticipantId(selectedParticipantId === p.id ? null : p.id)} className="card-accessible space-y-2 w-full text-left cursor-pointer">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="font-bold text-foreground">{p.name}</p>
@@ -129,10 +131,40 @@ const ManageActivity = () => {
                     <div className="h-full bg-primary transition-all" style={{ width: `${p.progress}%` }} />
                   </div>
                 </div>
+                <div className="space-y-1">
+                  <p className="text-xs font-bold text-muted-foreground">各任務進度</p>
+                  {activity.tasks.map(task => (
+                    <div key={task.id} className="flex justify-between text-xs">
+                      <span>{task.title}</span>
+                      <span className="font-bold">{p.taskProgress?.[task.id] || 0}/{task.targetCount}</span>
+                    </div>
+                  ))}
+                </div>
                 {p.rewardClaimed && (
                   <p className="text-xs text-primary flex items-center gap-1">
                     <Award size={12} /> 已領取獎勵
                   </p>
+                )}
+                {selectedParticipantId === p.id && p.completed && !p.rewardClaimed && (
+                  <span
+                    role="button"
+                    tabIndex={0}
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      distributeRewards(activity.id, p.id);
+                      toast.success(`已發放 ${p.name} 的獎勵點數`);
+                    }}
+                    onKeyDown={(event) => {
+                      if (event.key === 'Enter') {
+                        event.stopPropagation();
+                        distributeRewards(activity.id, p.id);
+                        toast.success(`已發放 ${p.name} 的獎勵點數`);
+                      }
+                    }}
+                    className="block rounded-xl bg-primary px-3 py-2 text-center text-sm font-bold text-primary-foreground"
+                  >
+                    發放此參與者獎勵點數
+                  </span>
                 )}
               </div>
             ))
@@ -142,6 +174,7 @@ const ManageActivity = () => {
         {/* 任務驗證 */}
         <div className="space-y-3">
           <h2 className="text-lg font-bold text-foreground">✅ 驗證任務進度</h2>
+          <p className="text-sm text-muted-foreground">此驗證是建立者確認任務紀錄的管理動作，不是參與者輸入專屬代碼；確認後可作為活動完成與發放獎勵的依據。</p>
           {activity.tasks.map(t => (
             <div key={t.id} className="card-accessible flex items-start gap-3">
               <button

@@ -59,6 +59,9 @@ export interface ActivityParticipant {
   progress: number; // 0-100
   completed: boolean;
   rewardClaimed: boolean;
+  taskProgress?: Record<number, number>;
+  pointsEarned?: number;
+  rewardPoints?: number;
 }
 
 export interface Activity {
@@ -86,6 +89,12 @@ export interface Activity {
   organizerQrCode: string;
   organizerName?: string;
   organizerAnonymous?: boolean;
+  organizerProfile?: {
+    name: string;
+    nickname: string;
+    department: string;
+    avatar: string;
+  };
   rewardClaimed: boolean;
   status: 'active' | 'ended';
   organizerId: string;
@@ -286,11 +295,28 @@ export function useActivities() {
     return newActivity;
   };
 
-  const joinActivity = (id: number) => {
+  const joinActivity = (id: number, participant?: Pick<ActivityParticipant, 'id' | 'name'>) => {
     let joined = false;
     globalActivities = globalActivities.map(a =>
       a.id === id && !a.joined && (a.maxParticipants === 0 || a.participants < a.maxParticipants)
-        ? (joined = true, { ...a, joined: true, participants: a.participants + 1 })
+        ? (joined = true, {
+            ...a,
+            joined: true,
+            participants: a.participants + 1,
+            participantList: participant
+              ? [...a.participantList, {
+                  id: participant.id,
+                  name: participant.name,
+                  joinedAt: new Date().toLocaleString('zh-TW'),
+                  progress: 0,
+                  completed: false,
+                  rewardClaimed: false,
+                  taskProgress: {},
+                  pointsEarned: 0,
+                  rewardPoints: 0,
+                }]
+              : a.participantList,
+          })
         : a
     );
     notify();
@@ -323,7 +349,7 @@ export function useActivities() {
     notify();
   };
 
-  const scanOrganizerQr = (activityId: number, taskId: number, qrCode: string) => {
+  const scanOrganizerQr = (activityId: number, taskId: number, qrCode: string, participantId?: string) => {
     let valid = false;
     let completed = false;
     globalActivities = globalActivities.map(a =>
@@ -337,6 +363,21 @@ export function useActivities() {
               completed = completedCount >= t.targetCount;
               return { ...t, completedCount, completed };
             }),
+            participantList: participantId
+              ? a.participantList.map(p => {
+                  if (p.id !== participantId) return p;
+                  const task = a.tasks.find(item => item.id === taskId);
+                  const taskProgress = {
+                    ...(p.taskProgress || {}),
+                    [taskId]: Math.min((p.taskProgress?.[taskId] || 0) + 1, task?.targetCount || 1),
+                  };
+                  const total = a.tasks.reduce((sum, task) => sum + task.targetCount, 0);
+                  const progress = total > 0
+                    ? Math.round((Object.values(taskProgress).reduce((sum, count) => sum + count, 0) / total) * 100)
+                    : 0;
+                  return { ...p, taskProgress, progress, completed: progress >= 100 };
+                })
+              : a.participantList,
           }
         : a
     );
@@ -386,10 +427,17 @@ export function useActivities() {
     notify();
   };
 
-  const distributeRewards = (activityId: number) => {
+  const distributeRewards = (activityId: number, participantId?: string) => {
     globalActivities = globalActivities.map(a =>
       a.id === activityId
-        ? { ...a, participantList: a.participantList.map(p => p.completed ? { ...p, rewardClaimed: true } : p) }
+        ? {
+            ...a,
+            participantList: a.participantList.map(p =>
+              (participantId ? p.id === participantId : p.completed)
+                ? { ...p, rewardClaimed: true, rewardPoints: p.pointsEarned || a.tasks.reduce((sum, task) => sum + task.points, 0) }
+                : p
+            ),
+          }
         : a
     );
     notify();
