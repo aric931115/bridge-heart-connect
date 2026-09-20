@@ -15,6 +15,7 @@ const Account = () => {
   const { activities } = useActivities();
   const [selectedHistoryId, setSelectedHistoryId] = useState<string | null>(null);
   const [avatarPreview, setAvatarPreview] = useState(user.avatar);
+  const [profileErrors, setProfileErrors] = useState<Record<string, string>>({});
 
   useVoiceAssistant(
     view === 'main' ? `帳戶管理。目前身份：${user.role === 'organizer' ? '活動發起者' : '參與者'}，累積${user.points}積分。`
@@ -176,18 +177,28 @@ const Account = () => {
   }
 
   if (view === 'profile') {
+    const validateProfileField = (field: string, value: string) => {
+      if (field === 'name') {
+        if (!value) return '名字不可空白。';
+        if (Array.from(value).length > 10) return '名字最多 10 個字。';
+        if (!/^[\u4e00-\u9fffA-Za-z0-9!@#$%^&*()_+\-=\[\]{};:'",.<>/?\\|`~ ]+$/.test(value)) return '名字含有不支援的字元。';
+      }
+      if (field === 'id' && !/^[A-Za-z0-9]{1,7}$/.test(value)) return 'ID 必須是 1 至 7 個英文或數字。';
+      return '';
+    };
     const saveProfile = (event: FormEvent<HTMLFormElement>) => {
       event.preventDefault();
       const form = new FormData(event.currentTarget);
       const name = String(form.get('name') || '').trim();
       const id = String(form.get('id') || '').trim();
       const department = String(form.get('department') || '').trim();
-      if (!name || Array.from(name).length > 10 || !/^[\u4e00-\u9fffA-Za-z0-9!@#$%^&*()_+\-=\[\]{};:'",.<>/?\\|`~ ]+$/.test(name)) {
-        toast.error('名字不可空白，且最多 10 個字，只能使用中英文、數字或符號。');
-        return;
-      }
-      if (!/^[A-Za-z0-9]{1,7}$/.test(id)) {
-        toast.error('ID 必須是 1 至 7 個英文或數字，不可包含符號。');
+      const nextErrors = {
+        name: validateProfileField('name', name),
+        id: validateProfileField('id', id),
+      };
+      setProfileErrors(nextErrors);
+      if (Object.values(nextErrors).some(Boolean)) {
+        toast.error('請先修正紅框欄位後再儲存。');
         return;
       }
       updateProfile({ name, id, department, avatar: avatarPreview });
@@ -205,7 +216,14 @@ const Account = () => {
           ].map(([field, label, value, hint]) => (
             <div key={field} className="space-y-2">
               <label className="font-bold">{label}</label>
-              <input name={field} defaultValue={value} className="w-full min-h-[52px] rounded-2xl border-2 border-input bg-background px-4 text-lg focus:outline-none focus:ring-4 focus:ring-ring" />
+              <input
+                name={field}
+                defaultValue={value}
+                onBlur={event => setProfileErrors(errors => ({ ...errors, [field]: validateProfileField(field, event.target.value.trim()) }))}
+                onChange={event => setProfileErrors(errors => ({ ...errors, [field]: validateProfileField(field, event.target.value.trim()) }))}
+                className={`w-full min-h-[52px] rounded-2xl border-2 bg-background px-4 text-lg focus:outline-none focus:ring-4 focus:ring-ring ${profileErrors[field] ? 'border-destructive ring-2 ring-destructive/20' : 'border-input'}`}
+              />
+              {profileErrors[field] && <p className="text-sm font-bold text-destructive">{profileErrors[field]}</p>}
               <p className="text-xs text-muted-foreground">{hint}</p>
             </div>
           ))}

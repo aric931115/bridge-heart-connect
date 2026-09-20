@@ -142,7 +142,7 @@ const ManageActivity = () => {
                 </div>
                 {p.rewardClaimed && (
                   <p className="text-xs text-primary flex items-center gap-1">
-                    <Award size={12} /> 已領取獎勵
+                    <Award size={12} /> 已發放 {p.rewardPoints || 0} 分
                   </p>
                 )}
                 {selectedParticipantId === p.id && p.completed && !p.rewardClaimed && (
@@ -196,11 +196,12 @@ const ManageActivity = () => {
         {/* 動作區 */}
         <div className="space-y-3">
           <Button
-            onClick={() => { distributeRewards(activity.id); toast.success('已發放獎勵給完成者'); }}
+            onClick={() => { distributeRewards(activity.id); toast.success('已依每位參與者的任務進度與答題結果智能發放獎勵'); }}
             className="w-full h-14 text-lg font-bold rounded-2xl gap-2"
           >
-            <Gift size={22} /> 發放獎勵
+            <Gift size={22} /> 依進度一鍵發放獎勵
           </Button>
+          <p className="text-xs text-muted-foreground">完成的任務依比例計算任務積分，答對的問答題發放題目積分；未完成或答錯的部分不會發放。</p>
           {activity.status === 'active' ? (
             <Button
               variant="destructive"

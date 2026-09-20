@@ -33,8 +33,8 @@ const TaskRoom = () => {
   }
 
   const completedTasks = activity.tasks.filter(t => (participant?.taskProgress?.[t.id] || 0) >= t.targetCount).length;
-  const answeredQuiz = activity.quiz.filter(q => q.answered).length;
-  const correctQuiz = activity.quiz.filter(q => q.correct).length;
+  const answeredQuiz = activity.quiz.filter(q => participant?.quizCorrect && Object.prototype.hasOwnProperty.call(participant.quizCorrect, q.id)).length;
+  const correctQuiz = activity.quiz.filter(q => participant?.quizCorrect?.[q.id]).length;
   const totalItems = activity.tasks.length + activity.quiz.length;
   const completedItems = completedTasks + answeredQuiz;
   const progress = totalItems > 0 ? Math.round((completedItems / totalItems) * 100) : 0;
@@ -60,7 +60,7 @@ const TaskRoom = () => {
       toast.error('請先選擇一個答案');
       return;
     }
-    answerQuiz(activity.id, quizId, selected);
+    answerQuiz(activity.id, quizId, selected, user.id);
     const q = activity.quiz.find(q => q.id === quizId);
     if (q && q.correctIndexes.length === selected.length && q.correctIndexes.every(index => selected.includes(index))) {
       toast.success('答對了！🎉');
@@ -259,9 +259,9 @@ const TaskRoom = () => {
                 </p>
                 <p className="text-xs text-muted-foreground">答對可得 {q.points} 分</p>
 
-                {q.answered ? (
-                  <div className={`rounded-xl p-3 text-center font-bold ${q.correct ? 'bg-primary/10 text-primary' : 'bg-destructive/10 text-destructive'}`}>
-                    {q.correct ? '✅ 答對了！' : `❌ 答錯了（正確答案：${q.correctIndexes.map(index => q.options[index]).join('、')}）`}
+                {participant?.quizCorrect && Object.prototype.hasOwnProperty.call(participant.quizCorrect, q.id) ? (
+                  <div className={`rounded-xl p-3 text-center font-bold ${participant.quizCorrect?.[q.id] ? 'bg-primary/10 text-primary' : 'bg-destructive/10 text-destructive'}`}>
+                    {participant.quizCorrect[q.id] ? '✅ 答對了！' : `❌ 答錯了（正確答案：${q.correctIndexes.map(index => q.options[index]).join('、')}）`}
                   </div>
                 ) : (
                   <>
