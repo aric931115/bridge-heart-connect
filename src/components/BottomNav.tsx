@@ -17,9 +17,7 @@ const BottomNav = () => {
     <nav className="fixed bottom-0 left-0 right-0 z-50 bg-card border-t-2 border-border safe-area-bottom">
       <div className="flex justify-around items-center h-20 max-w-lg mx-auto">
         {tabs.map(({ path, label, icon: Icon }) => {
-          const active = path === '/activities'
-            ? location.pathname === '/activities' || location.pathname.startsWith('/activities/')
-            : location.pathname === path;
+          const active = location.pathname === path;
           return (
             <button
               key={path}
