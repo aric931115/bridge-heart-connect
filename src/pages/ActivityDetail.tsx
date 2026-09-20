@@ -34,7 +34,7 @@ const ActivityDetail = () => {
   };
 
   const handleJoin = () => {
-    const joined = joinActivity(activity.id);
+    const joined = joinActivity(activity.id, { id: user.id, name: user.name });
     if (!joined) {
       toast.info('您已參加過此活動，不能重複加入。');
       return;
@@ -57,6 +57,19 @@ const ActivityDetail = () => {
       <div className="p-4 space-y-4">
         {/* Info card */}
         <div className="card-accessible space-y-3">
+          <button
+            onClick={() => toast.info(`發布者：${activity.organizerProfile?.name || activity.organizerName || '活動建立者'}；暱稱：${activity.organizerProfile?.nickname || '未提供'}；科系：${activity.organizerProfile?.department || '未提供'}`)}
+            className="flex items-center gap-3 w-full text-left border-b border-border pb-3"
+          >
+            <span className="w-14 h-14 rounded-full bg-muted flex items-center justify-center text-3xl">
+              {activity.organizerAnonymous ? '👤' : activity.organizerProfile?.avatar || '👤'}
+            </span>
+            <span>
+              <span className="block text-xs text-muted-foreground">活動發起者</span>
+              <span className="block font-bold">{activity.organizerAnonymous ? '匿名' : activity.organizerProfile?.name || activity.organizerName || '活動建立者'}</span>
+              <span className="block text-sm text-muted-foreground">點擊查看發起者資訊</span>
+            </span>
+          </button>
           <div className="flex items-start justify-between">
             <div className="flex-1">
               <h2 className="text-xl font-bold text-foreground">{activity.title}</h2>
@@ -105,7 +118,7 @@ const ActivityDetail = () => {
           <div className="pt-2 border-t border-border">
             <p className="text-foreground leading-relaxed">{activity.content}</p>
             <p className="mt-3 text-sm text-muted-foreground">
-              發布者：{activity.organizerAnonymous ? '匿名' : activity.organizerName || '活動建立者'}
+              發布者：{activity.organizerAnonymous ? '匿名' : activity.organizerProfile?.name || activity.organizerName || '活動建立者'}
             </p>
           </div>
         </div>
@@ -119,7 +132,7 @@ const ActivityDetail = () => {
 
         {/* Join button */}
         {!alreadyJoined ? (
-          <Button onClick={handleJoin} disabled={activity.maxParticipants > 0 && activity.participants >= activity.maxParticipants} className="w-full h-14 text-lg font-bold rounded-2xl gap-2" size="lg">
+          <Button onClick={handleJoin} disabled={activity.status === 'ended' || (activity.maxParticipants > 0 && activity.participants >= activity.maxParticipants)} className="w-full h-14 text-lg font-bold rounded-2xl gap-2" size="lg">
             <LogIn size={22} /> 加入活動
           </Button>
         ) : (

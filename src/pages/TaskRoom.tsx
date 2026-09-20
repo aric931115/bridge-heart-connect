@@ -5,11 +5,14 @@ import PageHeader from '@/components/PageHeader';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { useActivities } from '@/hooks/useActivities';
+import { useAppContext } from '@/contexts/AppContext';
 
 const TaskRoom = () => {
   const { id } = useParams();
   const { activities, scanOrganizerQr, answerQuiz, claimReward } = useActivities();
+  const { user } = useAppContext();
   const activity = activities.find(a => a.id === Number(id));
+  const participant = activity?.participantList.find(p => p.id === user.id);
   const [selectedAnswers, setSelectedAnswers] = useState<Record<number, number[]>>({});
   const [scanCode, setScanCode] = useState('');
   const [selectedMatch, setSelectedMatch] = useState<{ side: 'name' | 'image'; id: number } | null>(null);
@@ -29,7 +32,7 @@ const TaskRoom = () => {
     );
   }
 
-  const completedTasks = activity.tasks.filter(t => t.completed).length;
+  const completedTasks = activity.tasks.filter(t => (participant?.taskProgress?.[t.id] || 0) >= t.targetCount).length;
   const answeredQuiz = activity.quiz.filter(q => q.answered).length;
   const correctQuiz = activity.quiz.filter(q => q.correct).length;
   const totalItems = activity.tasks.length + activity.quiz.length;
@@ -133,23 +136,23 @@ const TaskRoom = () => {
             {activity.tasks.map(task => (
               <div key={task.id} className="card-accessible flex items-start gap-3">
                 <div className="mt-0.5 flex-shrink-0">
-                  {task.completed ? <CheckCircle2 size={28} className="text-primary" /> : <Circle size={28} className="text-muted-foreground" />}
+                  {(participant?.taskProgress?.[task.id] || 0) >= task.targetCount ? <CheckCircle2 size={28} className="text-primary" /> : <Circle size={28} className="text-muted-foreground" />}
                 </div>
                 <div className="flex-1">
-                  <p className={`font-bold text-foreground ${task.completed ? 'line-through opacity-60' : ''}`}>
+                  <p className={`font-bold text-foreground ${(participant?.taskProgress?.[task.id] || 0) >= task.targetCount ? 'line-through opacity-60' : ''}`}>
                     {task.title}
                   </p>
                   <p className="text-sm text-muted-foreground">{task.desc}</p>
                   <div className="mt-2 space-y-1">
                     <div className="flex justify-between text-xs text-muted-foreground">
                       <span>完成進度</span>
-                      <span className="font-bold text-primary">{task.completedCount}/{task.targetCount}</span>
+                      <span className="font-bold text-primary">{participant?.taskProgress?.[task.id] || 0}/{task.targetCount}</span>
                     </div>
                     <div className="h-2 rounded-full bg-muted overflow-hidden">
-                      <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${Math.min(100, (task.completedCount / task.targetCount) * 100)}%` }} />
+                      <div className="h-full rounded-full bg-primary transition-all"                       style={{ width: `${Math.min(100, ((participant?.taskProgress?.[task.id] || 0) / task.targetCount) * 100)}%` }} />
                     </div>
                   </div>
-                  {!task.completed && (
+                  {(participant?.taskProgress?.[task.id] || 0) < task.targetCount && (
                     <div className="mt-3 flex gap-2">
                       <input
                         value={scanCode}
@@ -161,7 +164,7 @@ const TaskRoom = () => {
                         variant="secondary"
                         className="gap-1 rounded-xl"
                         onClick={() => {
-                          const result = scanOrganizerQr(activity.id, task.id, scanCode);
+                          const result = scanOrganizerQr(activity.id, task.id, scanCode, user.id);
                           if (result.completed) {
                             setScanCode('');
                             toast.success('代碼驗證成功，任務已完成！');

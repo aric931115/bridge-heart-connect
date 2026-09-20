@@ -24,9 +24,12 @@ export interface UserHistoryEntry {
   completed: boolean;
 }
 
-interface UserProfile {
+export interface UserProfile {
   id: string;
   name: string;
+  nickname: string;
+  department: string;
+  avatar: string;
   role: UserRole;
   points: number;
   achievements: UserAchievement[];
@@ -41,6 +44,7 @@ interface AppContextType {
   addPoints: (amount: number) => void;
   addHistoryEntry: (entry: UserHistoryEntry) => void;
   unlockAchievement: (a: UserAchievement) => void;
+  updateProfile: (profile: Pick<UserProfile, 'id' | 'name' | 'nickname' | 'department' | 'avatar'>) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -48,6 +52,9 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 const defaultUser: UserProfile = {
   id: 'USR-0001',
   name: '同學',
+  nickname: '同學',
+  department: '尚未填寫科系',
+  avatar: '👤',
   role: 'participant',
   points: 0,
   achievements: [],
@@ -73,9 +80,11 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       : { ...u, history: [entry, ...u.history] });
   const unlockAchievement = (a: UserAchievement) =>
     setUser(u => u.achievements.some(x => x.id === a.id) ? u : { ...u, achievements: [a, ...u.achievements] });
+  const updateProfile = (profile: Pick<UserProfile, 'id' | 'name' | 'nickname' | 'department' | 'avatar'>) =>
+    setUser(u => ({ ...u, ...profile }));
 
   return (
-    <AppContext.Provider value={{ settings, updateSettings, user, setRole, addPoints, addHistoryEntry, unlockAchievement }}>
+    <AppContext.Provider value={{ settings, updateSettings, user, setRole, addPoints, addHistoryEntry, unlockAchievement, updateProfile }}>
       <div className={`${settings.highContrast ? 'high-contrast' : ''} text-size-${settings.textSize}`}>
         {children}
       </div>

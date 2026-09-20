@@ -1,17 +1,17 @@
-import { useState } from 'react';
-import { LogIn, UserPlus, KeyRound, Mail, Eye, EyeOff, ArrowRight, Trophy, Coins, History } from 'lucide-react';
+import { FormEvent, useState } from 'react';
+import { LogIn, UserPlus, KeyRound, Mail, Eye, EyeOff, ArrowRight, Trophy, Coins, History, Save } from 'lucide-react';
 import PageHeader from '@/components/PageHeader';
 import { toast } from 'sonner';
 import { useVoiceAssistant } from '@/hooks/useVoiceAssistant';
 import { useAppContext } from '@/contexts/AppContext';
 import { useActivities } from '@/hooks/useActivities';
 
-type View = 'main' | 'login' | 'signup' | 'forgot' | 'changePw' | 'career';
+type View = 'main' | 'login' | 'signup' | 'forgot' | 'changePw' | 'career' | 'profile';
 
 const Account = () => {
   const [view, setView] = useState<View>('main');
   const [showPw, setShowPw] = useState(false);
-  const { user } = useAppContext();
+  const { user, updateProfile } = useAppContext();
   const { activities } = useActivities();
   const [selectedHistoryId, setSelectedHistoryId] = useState<string | null>(null);
 
@@ -21,6 +21,7 @@ const Account = () => {
     : view === 'signup' ? '註冊頁面。請輸入學校信箱和密碼。'
     : view === 'forgot' ? '找回密碼頁面。'
     : view === 'career' ? '個人生涯頁面，查看歷史參與與成就。'
+    : view === 'profile' ? '編輯個人資料。'
     : '更改密碼頁面。'
   );
 
@@ -173,19 +174,66 @@ const Account = () => {
     );
   }
 
+  if (view === 'profile') {
+    const saveProfile = (event: FormEvent<HTMLFormElement>) => {
+      event.preventDefault();
+      const form = new FormData(event.currentTarget);
+      const name = String(form.get('name') || '').trim();
+      const id = String(form.get('id') || '').trim();
+      const nickname = String(form.get('nickname') || '').trim();
+      const department = String(form.get('department') || '').trim();
+      const avatar = String(form.get('avatar') || '').trim() || '👤';
+      if (!name || !/^[\u4e00-\u9fffA-Za-z0-9!@#$%^&*()_+\-=\[\]{};:'",.<>/?\\|`~ ]+$/.test(name)) {
+        toast.error('名字不可空白，且只能使用中英文、數字或符號。');
+        return;
+      }
+      if (!/^[A-Za-z0-9]+$/.test(id)) {
+        toast.error('ID 只能使用英文與數字，不可包含符號。');
+        return;
+      }
+      updateProfile({ name, id, nickname, department, avatar });
+      toast.success('個人資料已更新');
+      setView('main');
+    };
+    return (
+      <div className="pb-24">
+        <PageHeader title="編輯個人資料" showBack />
+        <form onSubmit={saveProfile} className="p-6 space-y-5">
+          {[
+            ['name', '名字', user.name, '可使用中文、英文、數字與符號'],
+            ['id', 'ID', user.id, '只能使用英文與數字'],
+            ['nickname', '暱稱', user.nickname, '顯示在活動發起者資訊'],
+            ['department', '科系', user.department, '例如：資訊工程學系'],
+            ['avatar', '頭像（表情符號）', user.avatar, '例如：🧑‍💻'],
+          ].map(([field, label, value, hint]) => (
+            <div key={field} className="space-y-2">
+              <label className="font-bold">{label}</label>
+              <input name={field} defaultValue={value} className="w-full min-h-[52px] rounded-2xl border-2 border-input bg-background px-4 text-lg focus:outline-none focus:ring-4 focus:ring-ring" />
+              <p className="text-xs text-muted-foreground">{hint}</p>
+            </div>
+          ))}
+          <button type="submit" className="accessible-btn w-full bg-primary text-primary-foreground flex items-center justify-center gap-2">
+            <Save size={22} /> 儲存個人資料
+          </button>
+        </form>
+      </div>
+    );
+  }
+
   return (
     <div className="pb-24">
       <PageHeader title="帳戶管理" />
       <div className="p-6 space-y-5">
         {/* 個人資料卡 */}
-        <div className="card-accessible flex items-center gap-4">
-          <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center text-3xl">👤</div>
+        <button onClick={() => setView('profile')} className="card-accessible flex items-center gap-4 w-full text-left">
+          <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center text-3xl">{user.avatar}</div>
           <div className="flex-1">
             <p className="text-lg font-bold">{user.name}</p>
             <p className="text-sm text-muted-foreground">ID：{user.id}</p>
             <p className="text-sm font-bold text-primary">💎 {user.points} 積分</p>
-          </div>
-        </div>
+            <span className="text-primary text-sm font-bold">編輯</span>
+            </div>
+          </button>
 
         <button onClick={() => setView('career')} className="accessible-btn w-full bg-secondary text-secondary-foreground flex items-center justify-center gap-3">
           <Trophy size={24} /> 我的生涯
