@@ -69,17 +69,19 @@ const ActivityDetail = () => {
           </div>
 
           {/* Room code */}
-          <button
-            onClick={() => {
-              navigator.clipboard.writeText(activity.roomCode);
-              toast.success(`房間代碼 ${activity.roomCode} 已複製！`);
-            }}
-            className="flex items-center gap-2 bg-muted rounded-xl px-4 py-2 active:scale-95 transition-transform"
-          >
-            <span className="text-xs text-muted-foreground">房間代碼</span>
-            <span className="font-bold text-foreground tracking-widest">{activity.roomCode}</span>
-            <Copy size={14} className="text-muted-foreground" />
-          </button>
+          {activity.roomCode && (
+            <button
+              onClick={() => {
+                navigator.clipboard.writeText(activity.roomCode);
+                toast.success(`房間代碼 ${activity.roomCode} 已複製！`);
+              }}
+              className="flex items-center gap-2 bg-muted rounded-xl px-4 py-2 active:scale-95 transition-transform"
+            >
+              <span className="text-xs text-muted-foreground">房間代碼</span>
+              <span className="font-bold text-foreground tracking-widest">{activity.roomCode}</span>
+              <Copy size={14} className="text-muted-foreground" />
+            </button>
+          )}
 
           <div className="pt-2 border-t border-border">
             <p className="text-foreground leading-relaxed">{activity.content}</p>

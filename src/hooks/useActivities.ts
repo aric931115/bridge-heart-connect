@@ -203,14 +203,14 @@ export function useActivities() {
     };
   });
 
-  const addActivity = (activity: Omit<Activity, 'id' | 'participants' | 'participantList' | 'joined' | 'roomCode' | 'rewardClaimed' | 'status' | 'createdAt' | 'organizerId'>) => {
+  const addActivity = (activity: Omit<Activity, 'id' | 'participants' | 'participantList' | 'joined' | 'roomCode' | 'rewardClaimed' | 'status' | 'createdAt' | 'organizerId'> & { roomCode?: string }) => {
     const newActivity: Activity = {
       ...activity,
       id: Date.now(),
       participants: 0,
       participantList: [],
       joined: false,
-      roomCode: generateRoomCode(),
+      roomCode: activity.roomCode || generateRoomCode(),
       rewardClaimed: false,
       status: 'active',
       organizerId: 'ORG-ME',
@@ -231,7 +231,8 @@ export function useActivities() {
   };
 
   const joinByCode = (code: string): Activity | null => {
-    const activity = globalActivities.find(a => a.roomCode === code.toUpperCase());
+    const normalizedCode = code.trim().toUpperCase();
+    const activity = globalActivities.find(a => a.roomCode && a.roomCode === normalizedCode);
     if (activity && !activity.joined) {
       joinActivity(activity.id);
       return activity;

@@ -40,6 +40,7 @@ const CreateActivity = () => {
   const [desc, setDesc] = useState('');
   const [content, setContent] = useState('');
   const [category, setCategory] = useState<ActivityCategory>('campus');
+  const [createRoom, setCreateRoom] = useState(false);
   const [rewardPoints, setRewardPoints] = useState(50);
   const [tasks, setTasks] = useState<TaskDraft[]>([
     { title: '', desc: '', type: 'general' },
@@ -79,14 +80,16 @@ const CreateActivity = () => {
       return;
     }
 
-    const validQuizzes: QuizQuestion[] = quizzes
-      .filter(q => q.question.trim() && q.options.some(o => o.trim()))
-      .map((q, i) => ({
-        id: i + 1,
-        question: q.question.trim(),
-        options: q.options.map(o => o.trim() || '（空選項）'),
-        correctIndex: q.correctIndex,
-      }));
+    const validQuizzes: QuizQuestion[] = createRoom
+      ? quizzes
+          .filter(q => q.question.trim() && q.options.some(o => o.trim()))
+          .map((q, i) => ({
+            id: i + 1,
+            question: q.question.trim(),
+            options: q.options.map(o => o.trim() || '（空選項）'),
+            correctIndex: q.correctIndex,
+          }))
+      : [];
 
     const newActivity = addActivity({
       title: title.trim(),
@@ -104,10 +107,11 @@ const CreateActivity = () => {
         completed: false,
       })),
       quiz: validQuizzes,
+      roomCode: createRoom ? undefined : '',
     });
 
-    setCreatedCode(newActivity.roomCode);
-    toast.success('活動已發布！');
+    setCreatedCode(createRoom ? newActivity.roomCode : null);
+    toast.success(createRoom ? '活動已發布，房間已建立！' : '活動已發布！');
   };
 
   if (createdCode) {
@@ -188,8 +192,26 @@ const CreateActivity = () => {
         </div>
 
         <div className="space-y-2">
-          <label className="text-sm font-bold text-foreground">活動時間 *</label>
-          <Input value={date} onChange={e => setDate(e.target.value)} placeholder="例如：4月10日（四）" className="h-12 text-base rounded-xl" />
+          <label className="text-sm font-bold text-foreground">活動日期 *</label>
+          <Input
+            type="date"
+            value={date}
+            onChange={e => setDate(e.target.value)}
+            className="h-12 text-base rounded-xl"
+          />
+        </div>
+
+        <div className="flex items-center justify-between rounded-xl border border-border bg-card px-4 py-3">
+          <div>
+            <p className="text-sm font-bold text-foreground">是否建立活動房間</p>
+            <p className="text-xs text-muted-foreground">勾選後才會產生房間代碼與遊戲選項</p>
+          </div>
+          <input
+            type="checkbox"
+            checked={createRoom}
+            onChange={e => setCreateRoom(e.target.checked)}
+            className="h-5 w-5 accent-primary"
+          />
         </div>
 
         <div className="space-y-2">
@@ -268,54 +290,55 @@ const CreateActivity = () => {
           </button>
         </div>
 
-        {/* Quiz */}
-        <div className="space-y-3">
-          <label className="text-sm font-bold text-foreground flex items-center gap-2">
-            <HelpCircle size={16} /> 問答挑戰（選填）
-          </label>
-          <p className="text-xs text-muted-foreground">新增問答題讓參與者到現場才能作答，完成後可領取獎勵證明</p>
+        {createRoom && (
+          <div className="space-y-3">
+            <label className="text-sm font-bold text-foreground flex items-center gap-2">
+              <HelpCircle size={16} /> 活動房間遊戲與問答（選填）
+            </label>
+            <p className="text-xs text-muted-foreground">勾選建立房間後，才會啟用房間代碼與遊戲問答，讓活動更適合現場互動。</p>
 
-          {quizzes.map((quiz, qIdx) => (
-            <div key={qIdx} className="card-accessible space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-bold text-muted-foreground">第 {qIdx + 1} 題</span>
-                <button onClick={() => removeQuiz(qIdx)} className="text-destructive p-1" aria-label="刪除題目">
-                  <Trash2 size={18} />
-                </button>
-              </div>
-              <Input
-                value={quiz.question}
-                onChange={e => updateQuizQuestion(qIdx, e.target.value)}
-                placeholder="問題內容"
-                className="h-11 text-base rounded-xl"
-              />
-              <p className="text-xs text-muted-foreground">選項（點擊圓圈設定正確答案）</p>
-              {quiz.options.map((opt, optIdx) => (
-                <div key={optIdx} className="flex items-center gap-2">
-                  <button
-                    onClick={() => setCorrectAnswer(qIdx, optIdx)}
-                    className={`w-7 h-7 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-colors ${
-                      quiz.correctIndex === optIdx ? 'border-primary bg-primary text-primary-foreground' : 'border-muted-foreground'
-                    }`}
-                    aria-label={`設定選項 ${String.fromCharCode(65 + optIdx)} 為正確答案`}
-                  >
-                    {quiz.correctIndex === optIdx && '✓'}
+            {quizzes.map((quiz, qIdx) => (
+              <div key={qIdx} className="card-accessible space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-bold text-muted-foreground">第 {qIdx + 1} 題</span>
+                  <button onClick={() => removeQuiz(qIdx)} className="text-destructive p-1" aria-label="刪除題目">
+                    <Trash2 size={18} />
                   </button>
-                  <Input
-                    value={opt}
-                    onChange={e => updateQuizOption(qIdx, optIdx, e.target.value)}
-                    placeholder={`選項 ${String.fromCharCode(65 + optIdx)}`}
-                    className="h-10 text-sm rounded-xl"
-                  />
                 </div>
-              ))}
-            </div>
-          ))}
+                <Input
+                  value={quiz.question}
+                  onChange={e => updateQuizQuestion(qIdx, e.target.value)}
+                  placeholder="問題內容"
+                  className="h-11 text-base rounded-xl"
+                />
+                <p className="text-xs text-muted-foreground">選項（點擊圓圈設定正確答案）</p>
+                {quiz.options.map((opt, optIdx) => (
+                  <div key={optIdx} className="flex items-center gap-2">
+                    <button
+                      onClick={() => setCorrectAnswer(qIdx, optIdx)}
+                      className={`w-7 h-7 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-colors ${
+                        quiz.correctIndex === optIdx ? 'border-primary bg-primary text-primary-foreground' : 'border-muted-foreground'
+                      }`}
+                      aria-label={`設定選項 ${String.fromCharCode(65 + optIdx)} 為正確答案`}
+                    >
+                      {quiz.correctIndex === optIdx && '✓'}
+                    </button>
+                    <Input
+                      value={opt}
+                      onChange={e => updateQuizOption(qIdx, optIdx, e.target.value)}
+                      placeholder={`選項 ${String.fromCharCode(65 + optIdx)}`}
+                      className="h-10 text-sm rounded-xl"
+                    />
+                  </div>
+                ))}
+              </div>
+            ))}
 
-          <button onClick={addQuiz} className="flex items-center gap-2 text-primary font-bold py-2 active:scale-95 transition-transform">
-            <Plus size={20} /> 新增問答題
-          </button>
-        </div>
+            <button onClick={addQuiz} className="flex items-center gap-2 text-primary font-bold py-2 active:scale-95 transition-transform">
+              <Plus size={20} /> 新增問答題
+            </button>
+          </div>
+        )}
 
         <Button onClick={handleSubmit} className="w-full h-14 text-lg font-bold rounded-2xl" size="lg">
           發布活動
