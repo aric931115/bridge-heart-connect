@@ -210,7 +210,6 @@ const CreateActivity = () => {
       organizerAnonymous,
       organizerProfile: {
         name: user.name,
-        nickname: user.nickname,
         department: user.department,
         avatar: user.avatar,
       },

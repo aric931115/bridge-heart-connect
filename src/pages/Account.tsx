@@ -14,6 +14,7 @@ const Account = () => {
   const { user, updateProfile } = useAppContext();
   const { activities } = useActivities();
   const [selectedHistoryId, setSelectedHistoryId] = useState<string | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState(user.avatar);
 
   useVoiceAssistant(
     view === 'main' ? `帳戶管理。目前身份：${user.role === 'organizer' ? '活動發起者' : '參與者'}，累積${user.points}積分。`
@@ -180,18 +181,16 @@ const Account = () => {
       const form = new FormData(event.currentTarget);
       const name = String(form.get('name') || '').trim();
       const id = String(form.get('id') || '').trim();
-      const nickname = String(form.get('nickname') || '').trim();
       const department = String(form.get('department') || '').trim();
-      const avatar = String(form.get('avatar') || '').trim() || '👤';
-      if (!name || !/^[\u4e00-\u9fffA-Za-z0-9!@#$%^&*()_+\-=\[\]{};:'",.<>/?\\|`~ ]+$/.test(name)) {
-        toast.error('名字不可空白，且只能使用中英文、數字或符號。');
+      if (!name || Array.from(name).length > 10 || !/^[\u4e00-\u9fffA-Za-z0-9!@#$%^&*()_+\-=\[\]{};:'",.<>/?\\|`~ ]+$/.test(name)) {
+        toast.error('名字不可空白，且最多 10 個字，只能使用中英文、數字或符號。');
         return;
       }
-      if (!/^[A-Za-z0-9]+$/.test(id)) {
-        toast.error('ID 只能使用英文與數字，不可包含符號。');
+      if (!/^[A-Za-z0-9]{1,7}$/.test(id)) {
+        toast.error('ID 必須是 1 至 7 個英文或數字，不可包含符號。');
         return;
       }
-      updateProfile({ name, id, nickname, department, avatar });
+      updateProfile({ name, id, department, avatar: avatarPreview });
       toast.success('個人資料已更新');
       setView('main');
     };
@@ -200,11 +199,9 @@ const Account = () => {
         <PageHeader title="編輯個人資料" showBack />
         <form onSubmit={saveProfile} className="p-6 space-y-5">
           {[
-            ['name', '名字', user.name, '可使用中文、英文、數字與符號'],
-            ['id', 'ID', user.id, '只能使用英文與數字'],
-            ['nickname', '暱稱', user.nickname, '顯示在活動發起者資訊'],
+            ['name', '名字', user.name, '最多 10 個字，可使用中文、英文、數字與符號'],
+            ['id', 'ID', user.id, '最多 7 個字，只能使用英文與數字'],
             ['department', '科系', user.department, '例如：資訊工程學系'],
-            ['avatar', '頭像（表情符號）', user.avatar, '例如：🧑‍💻'],
           ].map(([field, label, value, hint]) => (
             <div key={field} className="space-y-2">
               <label className="font-bold">{label}</label>
@@ -212,6 +209,31 @@ const Account = () => {
               <p className="text-xs text-muted-foreground">{hint}</p>
             </div>
           ))}
+          <div className="space-y-2">
+            <label className="font-bold">頭像圖片</label>
+            <div className="flex items-center gap-4">
+              {avatarPreview.startsWith('data:image/') || avatarPreview.startsWith('http')
+                ? <img src={avatarPreview} alt="目前頭像" className="h-20 w-20 rounded-full object-cover bg-muted" />
+                : <span className="flex h-20 w-20 items-center justify-center rounded-full bg-muted text-3xl">{avatarPreview}</span>}
+              <input
+                type="file"
+                accept="image/*"
+                onChange={event => {
+                  const file = event.target.files?.[0];
+                  if (!file) return;
+                  if (!file.type.startsWith('image/')) {
+                    toast.error('請選擇圖片檔。');
+                    return;
+                  }
+                  const reader = new FileReader();
+                  reader.onload = () => setAvatarPreview(String(reader.result));
+                  reader.readAsDataURL(file);
+                }}
+                className="min-w-0 flex-1 text-sm"
+              />
+            </div>
+            <p className="text-xs text-muted-foreground">可上傳 JPG、PNG、GIF 等圖片格式。</p>
+          </div>
           <button type="submit" className="accessible-btn w-full bg-primary text-primary-foreground flex items-center justify-center gap-2">
             <Save size={22} /> 儲存個人資料
           </button>
@@ -226,7 +248,9 @@ const Account = () => {
       <div className="p-6 space-y-5">
         {/* 個人資料卡 */}
         <button onClick={() => setView('profile')} className="card-accessible flex items-center gap-4 w-full text-left">
-          <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center text-3xl">{user.avatar}</div>
+          {user.avatar.startsWith('data:image/') || user.avatar.startsWith('http')
+            ? <img src={user.avatar} alt="個人頭像" className="h-16 w-16 rounded-full object-cover bg-muted" />
+            : <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center text-3xl">{user.avatar}</div>}
           <div className="flex-1">
             <p className="text-lg font-bold">{user.name}</p>
             <p className="text-sm text-muted-foreground">ID：{user.id}</p>
