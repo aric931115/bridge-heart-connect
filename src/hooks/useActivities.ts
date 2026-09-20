@@ -67,6 +67,7 @@ export interface Activity {
   tasks: ActivityTask[];
   quiz: QuizQuestion[];
   roomCode: string;
+  roomGames?: string[];
   rewardClaimed: boolean;
   rewardPoints: number;
   status: 'active' | 'ended';

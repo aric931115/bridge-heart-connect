@@ -30,6 +30,11 @@ const CATEGORY_OPTIONS: { value: ActivityCategory; label: string; icon: typeof S
   { value: 'private', label: '私人活動', icon: Lock, desc: '僅憑代碼加入' },
 ];
 
+const ROOM_GAME_OPTIONS = [
+  { id: 'gesture', label: '簡單手勢任務', desc: '模仿手勢，完成挑戰！' },
+  { id: 'image-match', label: '圖像配對遊戲', desc: '找到相同的圖片配對！' },
+] as const;
+
 const CreateActivity = () => {
   const navigate = useNavigate();
   const { addActivity } = useActivities();
@@ -41,6 +46,7 @@ const CreateActivity = () => {
   const [content, setContent] = useState('');
   const [category, setCategory] = useState<ActivityCategory>('campus');
   const [createRoom, setCreateRoom] = useState(false);
+  const [selectedRoomGames, setSelectedRoomGames] = useState<string[]>([]);
   const [rewardPoints, setRewardPoints] = useState(50);
   const [tasks, setTasks] = useState<TaskDraft[]>([
     { title: '', desc: '', type: 'general' },
@@ -71,6 +77,21 @@ const CreateActivity = () => {
   const handleSubmit = () => {
     if (!title.trim() || !date.trim() || !location.trim() || !desc.trim()) {
       toast.error('請填寫所有必要欄位');
+      return;
+    }
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const selectedDate = new Date(date);
+    selectedDate.setHours(0, 0, 0, 0);
+
+    if (selectedDate < today) {
+      toast.error('活動日期不能選擇比今天更早的日期');
+      return;
+    }
+
+    if (createRoom && selectedRoomGames.length === 0) {
+      toast.error('請至少選擇一種活動房間遊戲');
       return;
     }
 
@@ -108,6 +129,7 @@ const CreateActivity = () => {
       })),
       quiz: validQuizzes,
       roomCode: createRoom ? undefined : '',
+      roomGames: createRoom ? selectedRoomGames : [],
     });
 
     setCreatedCode(createRoom ? newActivity.roomCode : null);
@@ -196,6 +218,7 @@ const CreateActivity = () => {
           <Input
             type="date"
             value={date}
+            min={new Date().toISOString().split('T')[0]}
             onChange={e => setDate(e.target.value)}
             className="h-12 text-base rounded-xl"
           />
@@ -209,10 +232,54 @@ const CreateActivity = () => {
           <input
             type="checkbox"
             checked={createRoom}
-            onChange={e => setCreateRoom(e.target.checked)}
+            onChange={e => {
+              setCreateRoom(e.target.checked);
+              if (!e.target.checked) {
+                setSelectedRoomGames([]);
+              }
+            }}
             className="h-5 w-5 accent-primary"
           />
         </div>
+
+        {createRoom && (
+          <div className="space-y-3 rounded-xl border border-border bg-card p-4">
+            <p className="text-sm font-bold text-foreground">選擇活動房間遊戲（可複選）</p>
+            <div className="space-y-2">
+              {ROOM_GAME_OPTIONS.map(option => {
+                const active = selectedRoomGames.includes(option.id);
+                return (
+                  <button
+                    key={option.id}
+                    type="button"
+                    onClick={() => {
+                      setSelectedRoomGames(current =>
+                        current.includes(option.id)
+                          ? current.filter(item => item !== option.id)
+                          : [...current, option.id]
+                      );
+                    }}
+                    className={`w-full rounded-xl border-2 p-3 text-left transition-all ${
+                      active ? 'border-primary bg-primary/10 text-primary' : 'border-border bg-background text-foreground'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between gap-3">
+                      <div>
+                        <div className="text-sm font-bold">{option.label}</div>
+                        <div className="text-xs opacity-80">{option.desc}</div>
+                      </div>
+                      <div className={`h-5 w-5 rounded-full border-2 flex items-center justify-center ${
+                        active ? 'border-primary bg-primary' : 'border-muted-foreground bg-transparent'
+                      }`}>
+                        {active && <span className="h-2 w-2 rounded-full bg-white" />}
+                      </div>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         <div className="space-y-2">
           <label className="text-sm font-bold text-foreground">活動地點 *</label>
