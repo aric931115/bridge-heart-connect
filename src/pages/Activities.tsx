@@ -53,7 +53,7 @@ const Activities = () => {
         </div>
 
         {/* 角色提示與發起者快捷 */}
-        {(user.role === 'organizer' || e.organizerId === 'ORG-ME') && (
+        {user.role === 'organizer' && (
           <button
             onClick={() => navigate('/activities/create')}
             className="accessible-btn w-full bg-primary text-primary-foreground flex items-center justify-center gap-2"
