@@ -60,6 +60,7 @@ export interface ActivityParticipant {
   completed: boolean;
   rewardClaimed: boolean;
   taskProgress?: Record<number, number>;
+  quizCorrect?: Record<number, boolean>;
   pointsEarned?: number;
   rewardPoints?: number;
 }
@@ -113,7 +114,9 @@ function generateUniqueRoomCode(): string {
 }
 
 function generateOrganizerQrCode(): string {
-  return `ORG-${Math.random().toString(36).substring(2, 10).toUpperCase()}`;
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  const pick = (length: number) => Array.from({ length }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+  return `${pick(3)}-${pick(4)}`;
 }
 
 const sampleParticipants: ActivityParticipant[] = [
@@ -142,7 +145,7 @@ const defaultActivities: Activity[] = [
     roomCode: 'LOVE01',
     roomGames: ['image-match'],
     roomGamePoints: 3,
-    organizerQrCode: 'ORG-LOVE01',
+    organizerQrCode: 'K7M-4Q2A',
     rewardClaimed: false,
     status: 'active',
     organizerId: 'ORG-001',
@@ -174,7 +177,7 @@ const defaultActivities: Activity[] = [
     participantList: sampleParticipants.slice(0, 2),
     joined: false,
     roomCode: 'ECO202',
-    organizerQrCode: 'ORG-ECO202',
+    organizerQrCode: 'P3X-8N6B',
     rewardClaimed: false,
     status: 'active',
     organizerId: 'ORG-001',
@@ -207,7 +210,7 @@ const defaultActivities: Activity[] = [
     participantList: [],
     joined: false,
     roomCode: 'SIGN03',
-    organizerQrCode: 'ORG-SIGN03',
+    organizerQrCode: 'R8C-1V5D',
     rewardClaimed: false,
     status: 'active',
     organizerId: 'ORG-002',
@@ -238,7 +241,7 @@ const defaultActivities: Activity[] = [
     participantList: [],
     joined: false,
     roomCode: 'ART004',
-    organizerQrCode: 'ORG-ART004',
+    organizerQrCode: 'T2H-9L4W',
     rewardClaimed: false,
     status: 'active',
     organizerId: 'ORG-003',
@@ -311,6 +314,7 @@ export function useActivities() {
                   completed: false,
                   rewardClaimed: false,
                   taskProgress: {},
+                  quizCorrect: {},
                   pointsEarned: 0,
                   rewardPoints: 0,
                 }]
@@ -356,7 +360,7 @@ export function useActivities() {
         ? {
             ...a,
             tasks: a.tasks.map(t => {
-              if (t.id !== taskId || t.completed) return t;
+              if (t.id !== taskId) return t;
               valid = true;
               const completedCount = Math.min(t.completedCount + 1, t.targetCount);
               completed = completedCount >= t.targetCount;
@@ -393,15 +397,27 @@ export function useActivities() {
     notify();
   };
 
-  const answerQuiz = (activityId: number, quizId: number, selectedIndexes: number[]) => {
+  const answerQuiz = (activityId: number, quizId: number, selectedIndexes: number[], participantId?: string) => {
     globalActivities = globalActivities.map(a =>
       a.id === activityId
-        ? { ...a, quiz: a.quiz.map(q => {
+        ? { ...a,
+          quiz: a.quiz.map(q => {
             if (q.id !== quizId) return q;
             const expected = [...q.correctIndexes].sort((x, y) => x - y);
             const selected = [...selectedIndexes].sort((x, y) => x - y);
             return { ...q, answered: true, correct: expected.length === selected.length && expected.every((value, index) => value === selected[index]) };
-          }) }
+          }),
+          participantList: participantId
+            ? a.participantList.map(p => {
+                if (p.id !== participantId) return p;
+                const question = a.quiz.find(q => q.id === quizId);
+                const expected = [...(question?.correctIndexes || [])].sort((x, y) => x - y);
+                const selected = [...selectedIndexes].sort((x, y) => x - y);
+                const correct = expected.length === selected.length && expected.every((value, index) => value === selected[index]);
+                return { ...p, quizCorrect: { ...(p.quizCorrect || {}), [quizId]: correct } };
+              })
+            : a.participantList,
+        }
         : a
     );
     notify();
@@ -431,9 +447,23 @@ export function useActivities() {
       a.id === activityId
         ? {
             ...a,
+            tasks: a.tasks.map(task => ({ ...task, verified: true })),
             participantList: a.participantList.map(p =>
-              (participantId ? p.id === participantId : p.completed)
-                ? { ...p, rewardClaimed: true, rewardPoints: p.pointsEarned || a.tasks.reduce((sum, task) => sum + task.points, 0) }
+              (participantId ? p.id === participantId : !p.rewardClaimed)
+                ? {
+                    ...p,
+                    rewardClaimed: true,
+                    pointsEarned: a.tasks.reduce((sum, task) => {
+                      const count = Math.min(p.taskProgress?.[task.id] || 0, task.targetCount);
+                      return sum + Math.floor((task.points * count) / task.targetCount);
+                    }, 0) + a.quiz.reduce((sum, question) =>
+                      sum + (p.quizCorrect?.[question.id] ? question.points : 0), 0),
+                    rewardPoints: a.tasks.reduce((sum, task) => {
+                      const count = Math.min(p.taskProgress?.[task.id] || 0, task.targetCount);
+                      return sum + Math.floor((task.points * count) / task.targetCount);
+                    }, 0) + a.quiz.reduce((sum, question) =>
+                      sum + (p.quizCorrect?.[question.id] ? question.points : 0), 0),
+                  }
                 : p
             ),
           }
